@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: QuickServe - Beverage stand order management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: events
+    description: Event management
+  - name: articles
+    description: Article/product management
+  - name: orders
+    description: Order management
+  - name: settings
+    description: Event settings
+  - name: dashboard
+    description: Dashboard and stats
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,507 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with a role password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResult"
+        "401":
+          description: Invalid password
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/session:
+    get:
+      operationId: getSession
+      tags: [auth]
+      summary: Get current session info
+      responses:
+        "200":
+          description: Session info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionInfo"
+
+  /events:
+    get:
+      operationId: listEvents
+      tags: [events]
+      summary: List all events
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/{id}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get event by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    patch:
+      operationId: updateEvent
+      tags: [events]
+      summary: Update event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+    delete:
+      operationId: deleteEvent
+      tags: [events]
+      summary: Delete event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /events/slug/{slug}:
+    get:
+      operationId: getEventBySlug
+      tags: [events]
+      summary: Get event by slug (public)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+        "404":
+          description: Not found
+
+  /events/{eventId}/articles:
+    get:
+      operationId: listArticles
+      tags: [articles]
+      summary: List articles for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Article"
+    post:
+      operationId: createArticle
+      tags: [articles]
+      summary: Create article for event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+
+  /articles/{id}:
+    patch:
+      operationId: updateArticle
+      tags: [articles]
+      summary: Update article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Article"
+    delete:
+      operationId: deleteArticle
+      tags: [articles]
+      summary: Delete article
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /events/{eventId}/orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List orders for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a new order (buyer)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Validation error or duplicate name
+        "409":
+          description: Stock conflict
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /events/{eventId}/orders/by-name/{name}:
+    get:
+      operationId: getOrderByName
+      tags: [orders]
+      summary: Get order by name (case-insensitive)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+
+  /orders/{id}/reserve:
+    post:
+      operationId: reserveOrder
+      tags: [orders]
+      summary: Reserve stock for an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reserved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "409":
+          description: Stock conflict
+
+  /orders/{id}/pay:
+    post:
+      operationId: payOrder
+      tags: [orders]
+      summary: Process payment for a reserved order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "200":
+          description: Paid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Payment amount mismatch
+        "409":
+          description: Stock conflict
+
+  /orders/{id}/deliver:
+    post:
+      operationId: deliverOrder
+      tags: [orders]
+      summary: Mark entire order as delivered
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Delivered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /orders/{id}/deliver-partial:
+    post:
+      operationId: deliverOrderPartial
+      tags: [orders]
+      summary: Mark selected items as delivered
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PartialDeliveryInput"
+      responses:
+        "200":
+          description: Partially delivered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+
+  /events/{eventId}/settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get event settings
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update event settings
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  /events/{eventId}/dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard stats for event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /events/{eventId}/orders/summary:
+    get:
+      operationId: getOrdersSummary
+      tags: [dashboard]
+      summary: Get order counts by status
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Order summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdersSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +543,314 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    LoginInput:
+      type: object
+      required: [password, role, eventSlug]
+      properties:
+        password:
+          type: string
+        role:
+          type: string
+          enum: [caisse, preparateur, admin]
+        eventSlug:
+          type: ["string", "null"]
+
+    LoginResult:
+      type: object
+      required: [success, role]
+      properties:
+        success:
+          type: boolean
+        role:
+          type: string
+        eventSlug:
+          type: ["string", "null"]
+
+    SessionInfo:
+      type: object
+      required: [authenticated, role]
+      properties:
+        authenticated:
+          type: boolean
+        role:
+          type: ["string", "null"]
+        eventSlug:
+          type: ["string", "null"]
+
+    Event:
+      type: object
+      required: [id, nom, slug_url, actif, created_at]
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        slug_url:
+          type: string
+        actif:
+          type: boolean
+        created_at:
+          type: string
+
+    EventInput:
+      type: object
+      required: [nom, slug_url]
+      properties:
+        nom:
+          type: string
+        slug_url:
+          type: string
+        actif:
+          type: boolean
+
+    EventUpdate:
+      type: object
+      properties:
+        nom:
+          type: string
+        slug_url:
+          type: string
+        actif:
+          type: boolean
+
+    Article:
+      type: object
+      required: [id, evenement_id, nom, prix, stock_total, stock_disponible, disponible, created_at]
+      properties:
+        id:
+          type: integer
+        evenement_id:
+          type: integer
+        nom:
+          type: string
+        description:
+          type: ["string", "null"]
+        prix:
+          type: number
+        image_url:
+          type: ["string", "null"]
+        stock_total:
+          type: integer
+        stock_disponible:
+          type: integer
+        disponible:
+          type: boolean
+        created_at:
+          type: string
+
+    ArticleInput:
+      type: object
+      required: [nom, prix, stock_total]
+      properties:
+        nom:
+          type: string
+        description:
+          type: string
+        prix:
+          type: number
+        image_url:
+          type: string
+        stock_total:
+          type: integer
+        disponible:
+          type: boolean
+
+    ArticleUpdate:
+      type: object
+      properties:
+        nom:
+          type: string
+        description:
+          type: string
+        prix:
+          type: number
+        image_url:
+          type: string
+        stock_total:
+          type: integer
+        disponible:
+          type: boolean
+
+    OrderItem:
+      type: object
+      required: [id, commande_id, article_id, quantite, prix_unitaire, statut_livraison]
+      properties:
+        id:
+          type: integer
+        commande_id:
+          type: integer
+        article_id:
+          type: integer
+        article_nom:
+          type: ["string", "null"]
+        quantite:
+          type: integer
+        prix_unitaire:
+          type: number
+        statut_livraison:
+          type: string
+          enum: [non_livre, livre]
+
+    Order:
+      type: object
+      required: [id, evenement_id, nom_commande, statut, montant_total, created_at, updated_at]
+      properties:
+        id:
+          type: integer
+        evenement_id:
+          type: integer
+        nom_commande:
+          type: string
+        statut:
+          type: string
+          enum: [en_attente, reservee, payee, livree_partiellement, livree, expiree]
+        montant_total:
+          type: number
+        paye_cb:
+          type: number
+        paye_especes:
+          type: number
+        paye_cheque:
+          type: number
+        created_at:
+          type: string
+        updated_at:
+          type: string
+        expiration_reservation:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+
+    OrderItemInput:
+      type: object
+      required: [article_id, quantite]
+      properties:
+        article_id:
+          type: integer
+        quantite:
+          type: integer
+
+    OrderInput:
+      type: object
+      required: [nom_commande, items]
+      properties:
+        nom_commande:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+
+    PaymentInput:
+      type: object
+      required: [paye_cb, paye_especes, paye_cheque]
+      properties:
+        paye_cb:
+          type: number
+        paye_especes:
+          type: number
+        paye_cheque:
+          type: number
+
+    PartialDeliveryInput:
+      type: object
+      required: [item_ids]
+      properties:
+        item_ids:
+          type: array
+          items:
+            type: integer
+
+    Settings:
+      type: object
+      required: [id, evenement_id, temps_reservation_minutes, vente_ouverte, updated_at]
+      properties:
+        id:
+          type: integer
+        evenement_id:
+          type: integer
+        temps_reservation_minutes:
+          type: integer
+        vente_ouverte:
+          type: boolean
+        updated_at:
+          type: string
+
+    SettingsUpdate:
+      type: object
+      properties:
+        temps_reservation_minutes:
+          type: integer
+        mdp_caisse:
+          type: string
+        mdp_preparateur:
+          type: string
+        mdp_admin:
+          type: string
+        vente_ouverte:
+          type: boolean
+
+    TopArticle:
+      type: object
+      required: [article_id, nom, total_vendu, chiffre_affaires]
+      properties:
+        article_id:
+          type: integer
+        nom:
+          type: string
+        total_vendu:
+          type: integer
+        chiffre_affaires:
+          type: number
+
+    DashboardStats:
+      type: object
+      required: [ca_total, ca_cb, ca_especes, ca_cheque, nb_commandes_en_attente, nb_commandes_reservees, nb_commandes_payees, nb_commandes_livrees, nb_commandes_expirees, top_articles]
+      properties:
+        ca_total:
+          type: number
+        ca_cb:
+          type: number
+        ca_especes:
+          type: number
+        ca_cheque:
+          type: number
+        nb_commandes_en_attente:
+          type: integer
+        nb_commandes_reservees:
+          type: integer
+        nb_commandes_payees:
+          type: integer
+        nb_commandes_livrees:
+          type: integer
+        nb_commandes_expirees:
+          type: integer
+        top_articles:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopArticle"
+
+    OrdersSummary:
+      type: object
+      required: [en_attente, reservee, payee, livree_partiellement, livree, expiree, livrees_aujourd_hui]
+      properties:
+        en_attente:
+          type: integer
+        reservee:
+          type: integer
+        payee:
+          type: integer
+        livree_partiellement:
+          type: integer
+        livree:
+          type: integer
+        expiree:
+          type: integer
+        livrees_aujourd_hui:
+          type: integer
+        articles_a_preparer:
+          type: integer

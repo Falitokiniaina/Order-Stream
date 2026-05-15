@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "QuickServe"
+version = "1.0.0"
+id = "artifacts/quickserve"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20546
+
+[services.development]
+run = "pnpm --filter @workspace/quickserve run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/quickserve", "run", "build" ]
+publicDir = "artifacts/quickserve/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20546"
+BASE_PATH = "/"
