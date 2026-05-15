@@ -106,15 +106,16 @@ router.post("/events/:eventId/orders", async (req, res) => {
       return res.status(400).json({ error: "Les ventes sont actuellement fermées." });
     }
 
-    // Check name uniqueness (case-insensitive)
+    // Check name uniqueness (case-insensitive) — ignore expired/cancelled orders
     const existing = await db.select().from(commandesTable)
       .where(and(
         eq(commandesTable.evenement_id, eventId),
-        sql`LOWER(${commandesTable.nom_commande}) = ${normalizedName}`
+        sql`LOWER(${commandesTable.nom_commande}) = ${normalizedName}`,
+        sql`${commandesTable.statut} NOT IN ('expiree')`
       )).limit(1);
 
     if (existing.length > 0) {
-      return res.status(400).json({ error: `Le nom "${nom_commande}" est déjà utilisé pour cet événement.` });
+      return res.status(400).json({ error: `Le nom "${nom_commande}" est déjà utilisé pour cet événement. Choisissez un autre nom ou attendez que votre précédente commande expire.` });
     }
 
     // Get articles and calculate total
