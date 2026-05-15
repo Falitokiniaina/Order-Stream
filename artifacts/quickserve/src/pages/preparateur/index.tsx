@@ -1,5 +1,5 @@
 import { useRoute } from "wouter";
-import { useGetEventBySlug, useListOrders, getListOrdersQueryKey, useDeliverOrder, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
+import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, useDeliverOrder, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
 import { PasswordGate } from "@/components/password-gate";
 import { LoginInputRole } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
@@ -24,7 +24,7 @@ export default function PreparateurPage() {
 }
 
 function PreparateurContent({ slug }: { slug: string }) {
-  const { data: event } = useGetEventBySlug(slug, { query: { enabled: !!slug } });
+  const { data: event } = useGetEventBySlug(slug, { query: { enabled: !!slug, queryKey: getGetEventBySlugQueryKey(slug) } });
   const { data: orders } = useListOrders(event?.id || 0, { 
     query: { enabled: !!event?.id, queryKey: getListOrdersQueryKey(event?.id || 0), refetchInterval: 10000 } 
   });

@@ -1,6 +1,13 @@
 import { PasswordGate } from "@/components/password-gate";
 import { LoginInputRole } from "@workspace/api-client-react";
-import { useListEvents, getListEventsQueryKey, useCreateEvent, useUpdateEvent, useDeleteEvent, useGetDashboard, getGetDashboardQueryKey, useGetSettings, getGetSettingsQueryKey, useUpdateSettings, useListArticles, getListArticlesQueryKey, useCreateArticle, useUpdateArticle, useDeleteArticle } from "@workspace/api-client-react";
+import {
+  useListEvents, getListEventsQueryKey,
+  useCreateEvent, useUpdateEvent,
+  useGetDashboard, getGetDashboardQueryKey,
+  useGetSettings, getGetSettingsQueryKey, useUpdateSettings,
+  useListArticles, getListArticlesQueryKey,
+  useCreateArticle, useUpdateArticle, useDeleteArticle
+} from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,10 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -25,14 +33,38 @@ export default function AdminPage() {
 function AdminContent() {
   const { data: events } = useListEvents();
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [showNewEventDialog, setShowNewEventDialog] = useState(false);
   const { logout } = useAuth();
-  
-  // Set default event
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const createEvent = useCreateEvent();
+
+  const [newEventForm, setNewEventForm] = useState({ nom: "", slug_url: "" });
+
   useMemo(() => {
     if (events && events.length > 0 && !selectedEventId) {
       setSelectedEventId(events[0].id);
     }
   }, [events, selectedEventId]);
+
+  const handleCreateEvent = async () => {
+    if (!newEventForm.nom.trim() || !newEventForm.slug_url.trim()) return;
+    try {
+      const created = await createEvent.mutateAsync({
+        data: { nom: newEventForm.nom, slug_url: newEventForm.slug_url, actif: true }
+      });
+      queryClient.invalidateQueries({ queryKey: getListEventsQueryKey() });
+      setSelectedEventId(created.id);
+      setShowNewEventDialog(false);
+      setNewEventForm({ nom: "", slug_url: "" });
+      toast({ title: "Événement créé !", description: `Slug : /${created.slug_url}` });
+    } catch (e) {
+      toast({ title: "Erreur lors de la création", variant: "destructive" });
+    }
+  };
+
+  const slugify = (str: string) =>
+    str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -42,10 +74,10 @@ function AdminContent() {
             <Settings size={24} />
             Administration QuickServe
           </div>
-          
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-3">
             <Select value={selectedEventId?.toString()} onValueChange={(v) => setSelectedEventId(Number(v))}>
-              <SelectTrigger className="w-[250px] font-semibold">
+              <SelectTrigger className="w-[220px] font-semibold">
                 <SelectValue placeholder="Sélectionner un événement" />
               </SelectTrigger>
               <SelectContent>
@@ -54,6 +86,9 @@ function AdminContent() {
                 ))}
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={() => setShowNewEventDialog(true)}>
+              <CalendarPlus size={16} className="mr-2" /> Nouvel événement
+            </Button>
             <Button variant="ghost" size="icon" onClick={logout} title="Déconnexion">
               <LogOut size={18} />
             </Button>
@@ -75,17 +110,57 @@ function AdminContent() {
                 <Settings size={18} className="mr-2" /> Configuration
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="dashboard"><DashboardTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="stock"><StockTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="config"><ConfigTab eventId={selectedEventId} /></TabsContent>
           </Tabs>
         ) : (
           <div className="text-center py-20 text-muted-foreground">
-            Sélectionnez ou créez un événement pour commencer.
+            <CalendarPlus size={48} className="mx-auto mb-4 text-muted-foreground/40" />
+            <p className="text-lg font-medium mb-4">Aucun événement trouvé</p>
+            <Button onClick={() => setShowNewEventDialog(true)}>
+              <CalendarPlus size={16} className="mr-2" /> Créer le premier événement
+            </Button>
           </div>
         )}
       </main>
+
+      <Dialog open={showNewEventDialog} onOpenChange={setShowNewEventDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvel événement</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid gap-2">
+              <Label>Nom de l'événement</Label>
+              <Input
+                placeholder="Festival de l'été 2026"
+                value={newEventForm.nom}
+                onChange={e => setNewEventForm({ nom: e.target.value, slug_url: slugify(e.target.value) })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Slug URL</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">/</span>
+                <Input
+                  placeholder="festival-ete-2026"
+                  value={newEventForm.slug_url}
+                  onChange={e => setNewEventForm({ ...newEventForm, slug_url: slugify(e.target.value) })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Adresse d'accès acheteur : <strong>/{newEventForm.slug_url || "..."}</strong></p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewEventDialog(false)}>Annuler</Button>
+            <Button onClick={handleCreateEvent} disabled={!newEventForm.nom.trim() || !newEventForm.slug_url.trim() || createEvent.isPending}>
+              {createEvent.isPending ? "Création..." : "Créer l'événement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -131,33 +206,41 @@ function DashboardTab({ eventId }: { eventId: number }) {
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-card border rounded-2xl p-6 shadow-sm">
           <h3 className="font-bold text-lg mb-6">Répartition des paiements</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={paymentData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {paymentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <RechartsTooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {paymentData.length === 0 ? (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">Aucune vente pour le moment</div>
+          ) : (
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={paymentData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                    {paymentData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip formatter={(value: number) => `${value.toFixed(2)} €`} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         <div className="bg-card border rounded-2xl p-6 shadow-sm">
           <h3 className="font-bold text-lg mb-6">Top Articles (Ventes)</h3>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topArticlesData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 12}} />
-                <RechartsTooltip />
-                <Bar dataKey="ventes" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {topArticlesData.length === 0 ? (
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">Aucune vente pour le moment</div>
+          ) : (
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topArticlesData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" />
+                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                  <RechartsTooltip />
+                  <Bar dataKey="ventes" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -168,10 +251,14 @@ function StockTab({ eventId }: { eventId: number }) {
   const { data: articles } = useListArticles(eventId, { query: { enabled: !!eventId, queryKey: getListArticlesQueryKey(eventId) } });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
-  
+  const [showNewArticleDialog, setShowNewArticleDialog] = useState(false);
+  const [newArticleForm, setNewArticleForm] = useState({ nom: "", prix: "", stock_total: "", disponible: true });
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const updateArticle = useUpdateArticle();
+  const createArticle = useCreateArticle();
+  const deleteArticle = useDeleteArticle();
 
   const handleEditClick = (article: any) => {
     setEditingId(article.id);
@@ -193,26 +280,60 @@ function StockTab({ eventId }: { eventId: number }) {
       queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
       setEditingId(null);
       toast({ title: "Article mis à jour" });
-    } catch(e) {
+    } catch (e) {
       toast({ title: "Erreur", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Supprimer cet article ?")) return;
+    try {
+      await deleteArticle.mutateAsync({ id });
+      queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
+      toast({ title: "Article supprimé" });
+    } catch (e) {
+      toast({ title: "Erreur lors de la suppression", variant: "destructive" });
+    }
+  };
+
+  const handleCreateArticle = async () => {
+    if (!newArticleForm.nom.trim() || !newArticleForm.prix || !newArticleForm.stock_total) return;
+    try {
+      await createArticle.mutateAsync({
+        eventId,
+        data: {
+          nom: newArticleForm.nom,
+          prix: parseFloat(newArticleForm.prix),
+          stock_total: parseInt(newArticleForm.stock_total, 10),
+          disponible: newArticleForm.disponible
+        }
+      });
+      queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
+      setShowNewArticleDialog(false);
+      setNewArticleForm({ nom: "", prix: "", stock_total: "", disponible: true });
+      toast({ title: "Article créé !" });
+    } catch (e) {
+      toast({ title: "Erreur lors de la création", variant: "destructive" });
     }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button><Plus size={16} className="mr-2"/> Nouvel Article</Button>
+        <Button onClick={() => setShowNewArticleDialog(true)}>
+          <Plus size={16} className="mr-2" /> Nouvel article
+        </Button>
       </div>
-      
+
       <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
         <table className="w-full text-sm text-left">
           <thead className="bg-muted/50 text-muted-foreground uppercase tracking-wider text-xs border-b">
             <tr>
-              <th className="px-4 py-3 font-semibold">Image</th>
               <th className="px-4 py-3 font-semibold">Nom</th>
               <th className="px-4 py-3 font-semibold text-right">Prix</th>
-              <th className="px-4 py-3 font-semibold text-right">Stock Actuel</th>
-              <th className="px-4 py-3 font-semibold text-center">En Vente</th>
+              <th className="px-4 py-3 font-semibold text-right">Stock total</th>
+              <th className="px-4 py-3 font-semibold text-right">Dispo.</th>
+              <th className="px-4 py-3 font-semibold text-center">En vente</th>
               <th className="px-4 py-3 font-semibold text-right">Actions</th>
             </tr>
           </thead>
@@ -221,39 +342,86 @@ function StockTab({ eventId }: { eventId: number }) {
               const isEditing = editingId === article.id;
               return (
                 <tr key={article.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="w-12 h-12 bg-muted rounded-md overflow-hidden">
-                      {article.image_url && <img src={article.image_url} alt="" className="w-full h-full object-cover"/>}
-                    </div>
-                  </td>
                   <td className="px-4 py-3 font-medium">
-                    {isEditing ? <Input value={editForm.nom} onChange={e => setEditForm({...editForm, nom: e.target.value})} className="h-8"/> : article.nom}
+                    {isEditing
+                      ? <Input value={editForm.nom} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} className="h-8" />
+                      : article.nom}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-primary">
-                    {isEditing ? <Input type="number" step="0.5" value={editForm.prix} onChange={e => setEditForm({...editForm, prix: e.target.value})} className="h-8 w-24 ml-auto text-right"/> : `${article.prix.toFixed(2)} €`}
+                    {isEditing
+                      ? <Input type="number" step="0.5" value={editForm.prix} onChange={e => setEditForm({ ...editForm, prix: e.target.value })} className="h-8 w-24 ml-auto text-right" />
+                      : `${article.prix.toFixed(2)} €`}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {isEditing ? <Input type="number" value={editForm.stock_total} onChange={e => setEditForm({...editForm, stock_total: e.target.value})} className="h-8 w-24 ml-auto text-right"/> : article.stock_disponible}
+                    {isEditing
+                      ? <Input type="number" value={editForm.stock_total} onChange={e => setEditForm({ ...editForm, stock_total: e.target.value })} className="h-8 w-24 ml-auto text-right" />
+                      : article.stock_total}
+                  </td>
+                  <td className="px-4 py-3 text-right text-muted-foreground">
+                    {article.stock_disponible}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {isEditing ? <Switch checked={editForm.disponible} onCheckedChange={c => setEditForm({...editForm, disponible: c})} /> : <Switch checked={article.disponible} disabled />}
+                    {isEditing
+                      ? <Switch checked={editForm.disponible} onCheckedChange={c => setEditForm({ ...editForm, disponible: c })} />
+                      : <Switch checked={article.disponible} disabled />}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {isEditing ? (
                       <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="sm" onClick={() => setEditingId(null)}>Annuler</Button>
-                        <Button size="sm" onClick={handleSave}><Save size={14} className="mr-1"/> Enregistrer</Button>
+                        <Button size="sm" onClick={handleSave} disabled={updateArticle.isPending}>
+                          <Save size={14} className="mr-1" /> Enregistrer
+                        </Button>
                       </div>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => handleEditClick(article)}>Modifier</Button>
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(article)}>Modifier</Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(article.id)}>
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     )}
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
       </div>
+
+      <Dialog open={showNewArticleDialog} onOpenChange={setShowNewArticleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvel article</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid gap-2">
+              <Label>Nom de l'article</Label>
+              <Input placeholder="Bière pression" value={newArticleForm.nom} onChange={e => setNewArticleForm({ ...newArticleForm, nom: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Prix (€)</Label>
+                <Input type="number" step="0.5" min="0" placeholder="2.50" value={newArticleForm.prix} onChange={e => setNewArticleForm({ ...newArticleForm, prix: e.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Stock initial</Label>
+                <Input type="number" min="0" placeholder="100" value={newArticleForm.stock_total} onChange={e => setNewArticleForm({ ...newArticleForm, stock_total: e.target.value })} />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch id="dispo" checked={newArticleForm.disponible} onCheckedChange={c => setNewArticleForm({ ...newArticleForm, disponible: c })} />
+              <Label htmlFor="dispo">Disponible à la vente</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNewArticleDialog(false)}>Annuler</Button>
+            <Button onClick={handleCreateArticle} disabled={!newArticleForm.nom.trim() || !newArticleForm.prix || !newArticleForm.stock_total || createArticle.isPending}>
+              {createArticle.isPending ? "Création..." : "Créer l'article"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -272,7 +440,6 @@ function ConfigTab({ eventId }: { eventId: number }) {
     mdp_admin: ""
   });
 
-  // Sync form when settings load
   useMemo(() => {
     if (settings) {
       setForm(f => ({ ...f, temps_reservation_minutes: settings.temps_reservation_minutes, vente_ouverte: settings.vente_ouverte }));
@@ -289,7 +456,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
       if (form.mdp_preparateur) dataToUpdate.mdp_preparateur = form.mdp_preparateur;
       if (form.mdp_admin) dataToUpdate.mdp_admin = form.mdp_admin;
 
-      await updateSettings.mutateAsync({ id: settings!.id, data: dataToUpdate });
+      await updateSettings.mutateAsync({ eventId, data: dataToUpdate });
       queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey(eventId) });
       setForm(f => ({ ...f, mdp_caisse: "", mdp_preparateur: "", mdp_admin: "" }));
       toast({ title: "Configuration sauvegardée" });
@@ -303,7 +470,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
   return (
     <div className="max-w-2xl bg-card border rounded-2xl p-6 shadow-sm">
       <h3 className="text-xl font-bold mb-6">Paramètres de l'événement</h3>
-      
+
       <div className="space-y-6">
         <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border">
           <div>
@@ -321,7 +488,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
         <div className="pt-6 border-t">
           <h4 className="font-bold mb-4">Mots de passe</h4>
           <p className="text-sm text-muted-foreground mb-4">Laissez vide pour ne pas modifier.</p>
-          
+
           <div className="space-y-4">
             <div className="grid gap-2">
               <Label>Mot de passe Caisse</Label>
@@ -338,7 +505,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
           </div>
         </div>
 
-        <Button className="w-full" size="lg" onClick={handleSave}>
+        <Button className="w-full" size="lg" onClick={handleSave} disabled={updateSettings.isPending}>
           Enregistrer la configuration
         </Button>
       </div>

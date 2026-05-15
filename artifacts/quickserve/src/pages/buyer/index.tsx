@@ -1,5 +1,5 @@
 import { useRoute } from "wouter";
-import { useGetEventBySlug, useGetSettings, getGetSettingsQueryKey, useListArticles, getListArticlesQueryKey, useGetOrderByName, getGetOrderByNameQueryKey, useCreateOrder, useReserveOrder, Article } from "@workspace/api-client-react";
+import { useGetEventBySlug, getGetEventBySlugQueryKey, useGetSettings, getGetSettingsQueryKey, useListArticles, getListArticlesQueryKey, useGetOrderByName, getGetOrderByNameQueryKey, useCreateOrder, useReserveOrder, Article } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ export default function BuyerPage() {
   const queryClient = useQueryClient();
 
   const { data: event, isLoading: eventLoading } = useGetEventBySlug(slug || "", {
-    query: { enabled: !!slug }
+    query: { enabled: !!slug, queryKey: getGetEventBySlugQueryKey(slug || "") }
   });
 
   const { data: settings } = useGetSettings(event?.id || 0, {
