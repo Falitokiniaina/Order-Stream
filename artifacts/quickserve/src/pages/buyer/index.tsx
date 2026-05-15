@@ -73,6 +73,7 @@ export default function BuyerPage() {
       }));
 
       const order = await createOrder.mutateAsync({
+        eventId: event.id,
         data: { nom_commande: orderName, items }
       });
 
