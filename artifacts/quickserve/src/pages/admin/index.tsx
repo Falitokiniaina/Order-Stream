@@ -17,10 +17,11 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -187,24 +188,58 @@ function DashboardTab({ eventId }: { eventId: number }) {
     ca: a.chiffre_affaires
   }));
 
+  const statusConfig = [
+    { key: "nb_commandes_en_attente",          label: "En attente",         color: "text-muted-foreground", desc: "Panier créé par l'acheteur, pas encore réservé." },
+    { key: "nb_commandes_reservees",            label: "Réservée",           color: "text-amber-600",        desc: "Stock bloqué, commande en attente à la caisse." },
+    { key: "nb_commandes_expirees",             label: "Expirée",            color: "text-destructive",      desc: "La réservation n'a pas été payée à temps (timer automatique)." },
+    { key: "nb_commandes_payees",               label: "Payée",              color: "text-blue-600",         desc: "Commande réglée par le caissier, en attente de préparation." },
+    { key: "nb_commandes_livrees_partiellement",label: "Livrée part.",       color: "text-orange-500",       desc: "Certains articles remis, d'autres encore en attente de livraison." },
+    { key: "nb_commandes_livrees",              label: "Livrée",             color: "text-green-600",        desc: "Commande complètement remise au client par le préparateur." },
+  ] as const;
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* CA Card */}
         <div className="bg-primary text-primary-foreground p-6 rounded-2xl shadow-sm">
-          <div className="text-sm font-semibold uppercase tracking-wider opacity-80 mb-2">Chiffre d'affaires</div>
-          <div className="text-4xl font-black">{stats.ca_total.toFixed(2)} €</div>
+          <div className="text-sm font-semibold uppercase tracking-wider opacity-80 mb-1">Chiffre d'affaires</div>
+          <div className="text-4xl font-black mb-4">{stats.ca_total.toFixed(2)} €</div>
+          <div className="grid grid-cols-3 gap-2 border-t border-primary-foreground/20 pt-4">
+            {[
+              { label: "CB",       value: stats.ca_cb },
+              { label: "Espèces", value: stats.ca_especes },
+              { label: "Chèques", value: stats.ca_cheque },
+            ].map(({ label, value }) => (
+              <div key={label} className="text-center">
+                <div className="text-lg font-black">{value.toFixed(2)} €</div>
+                <div className="text-xs font-semibold opacity-70 uppercase tracking-wider">{label}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Nbr Commandes Card */}
         <div className="bg-card border p-6 rounded-2xl shadow-sm">
-          <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">En attente</div>
-          <div className="text-4xl font-black">{stats.nb_commandes_reservees}</div>
-        </div>
-        <div className="bg-card border p-6 rounded-2xl shadow-sm">
-          <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Livrées</div>
-          <div className="text-4xl font-black">{stats.nb_commandes_livrees}</div>
-        </div>
-        <div className="bg-card border p-6 rounded-2xl shadow-sm">
-          <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Expirées</div>
-          <div className="text-4xl font-black text-destructive">{stats.nb_commandes_expirees}</div>
+          <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Nbr Commandes</div>
+          <TooltipProvider delayDuration={200}>
+            <div className="grid grid-cols-3 gap-3">
+              {statusConfig.map(({ key, label, color, desc }) => (
+                <Tooltip key={key}>
+                  <TooltipTrigger asChild>
+                    <div className="flex flex-col items-center bg-muted/40 hover:bg-muted/70 rounded-xl p-3 cursor-default transition-colors">
+                      <div className={`text-3xl font-black ${color}`}>{stats[key]}</div>
+                      <div className="text-xs font-semibold text-muted-foreground mt-1 text-center leading-tight">{label}</div>
+                      <Info size={11} className="text-muted-foreground/40 mt-1" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[200px] text-center text-xs">
+                    <p className="font-semibold mb-0.5">{label}</p>
+                    <p>{desc}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </TooltipProvider>
         </div>
       </div>
 

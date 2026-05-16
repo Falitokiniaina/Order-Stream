@@ -15,6 +15,7 @@ export interface DashboardStats {
   nb_commandes_en_attente: number;
   nb_commandes_reservees: number;
   nb_commandes_payees: number;
+  nb_commandes_livrees_partiellement: number;
   nb_commandes_livrees: number;
   nb_commandes_expirees: number;
   top_articles: TopArticle[];

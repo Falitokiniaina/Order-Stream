@@ -605,6 +605,7 @@ export const GetDashboardResponse = zod.object({
   "nb_commandes_en_attente": zod.number(),
   "nb_commandes_reservees": zod.number(),
   "nb_commandes_payees": zod.number(),
+  "nb_commandes_livrees_partiellement": zod.number(),
   "nb_commandes_livrees": zod.number(),
   "nb_commandes_expirees": zod.number(),
   "top_articles": zod.array(zod.object({

@@ -61,6 +61,7 @@ router.get("/events/:eventId/dashboard", async (req, res) => {
       nb_commandes_en_attente: counts["en_attente"] ?? 0,
       nb_commandes_reservees: counts["reservee"] ?? 0,
       nb_commandes_payees: counts["payee"] ?? 0,
+      nb_commandes_livrees_partiellement: counts["livree_partiellement"] ?? 0,
       nb_commandes_livrees: counts["livree"] ?? 0,
       nb_commandes_expirees: counts["expiree"] ?? 0,
       top_articles: topArticlesResult.map(a => ({

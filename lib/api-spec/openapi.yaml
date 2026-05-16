@@ -878,7 +878,7 @@ components:
 
     DashboardStats:
       type: object
-      required: [ca_total, ca_cb, ca_especes, ca_cheque, nb_commandes_en_attente, nb_commandes_reservees, nb_commandes_payees, nb_commandes_livrees, nb_commandes_expirees, top_articles]
+      required: [ca_total, ca_cb, ca_especes, ca_cheque, nb_commandes_en_attente, nb_commandes_reservees, nb_commandes_payees, nb_commandes_livrees_partiellement, nb_commandes_livrees, nb_commandes_expirees, top_articles]
       properties:
         ca_total:
           type: number
@@ -893,6 +893,8 @@ components:
         nb_commandes_reservees:
           type: integer
         nb_commandes_payees:
+          type: integer
+        nb_commandes_livrees_partiellement:
           type: integer
         nb_commandes_livrees:
           type: integer
