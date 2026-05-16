@@ -8,6 +8,7 @@ import {
   getOrderByName, Order
 } from "@workspace/api-client-react";
 import { useState } from "react";
+import { useInView } from "@/hooks/use-in-view";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -359,61 +360,17 @@ export default function BuyerPage() {
 
       <div className="p-4 max-w-4xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {articles?.filter(a => a.disponible).map((article) => {
+          {articles?.filter(a => a.disponible).map((article, index) => {
             const qty = cart[article.id] || 0;
-            const stockLeft = article.stock_disponible - qty;
             return (
-              <div key={article.id} className="bg-card border rounded-2xl overflow-hidden shadow-sm flex flex-col">
-                <div className="aspect-square bg-muted relative">
-                  {article.image_url ? (
-                    <img src={article.image_url} alt={article.nom} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                      <ShoppingBag size={32} className="text-primary/40" />
-                    </div>
-                  )}
-                  {qty > 0 && (
-                    <div className="absolute top-2 right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
-                      {qty}
-                    </div>
-                  )}
-                </div>
-                <div className="p-3 flex-1 flex flex-col">
-                  <div className="font-semibold leading-tight mb-0.5">{article.nom}</div>
-                  <div className="text-primary font-bold mb-1">{article.prix.toFixed(2)} €</div>
-                  <div className={`text-xs mb-2 font-medium ${article.stock_disponible <= 3 ? 'text-orange-500' : 'text-muted-foreground'}`}>
-                    {article.stock_disponible <= 0 ? 'Épuisé' : `${article.stock_disponible} restant${article.stock_disponible > 1 ? 's' : ''}`}
-                  </div>
-
-                  <div className="mt-auto">
-                    {article.stock_disponible > 0 ? (
-                      <div className="flex items-center justify-between bg-muted rounded-full p-1">
-                        <Button
-                          variant="ghost" size="icon"
-                          className="h-8 w-8 rounded-full shrink-0"
-                          onClick={() => updateQuantity(article.id, -1, article.stock_disponible)}
-                          disabled={!qty}
-                        >
-                          <Minus size={16} />
-                        </Button>
-                        <span className="font-semibold w-8 text-center">{qty}</span>
-                        <Button
-                          variant="default" size="icon"
-                          className="h-8 w-8 rounded-full shrink-0"
-                          onClick={() => updateQuantity(article.id, 1, article.stock_disponible)}
-                          disabled={qty >= article.stock_disponible}
-                        >
-                          <Plus size={16} />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center text-sm font-medium text-destructive py-2 bg-destructive/10 rounded-full">
-                        Épuisé
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <ArticleCard
+                key={article.id}
+                article={article}
+                qty={qty}
+                index={index}
+                onIncrease={() => updateQuantity(article.id, 1, article.stock_disponible)}
+                onDecrease={() => updateQuantity(article.id, -1, article.stock_disponible)}
+              />
             );
           })}
         </div>
@@ -437,6 +394,76 @@ export default function BuyerPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+interface ArticleCardProps {
+  article: {
+    id: number;
+    nom: string;
+    prix: number;
+    image_url?: string | null;
+    stock_disponible: number;
+  };
+  qty: number;
+  index: number;
+  onIncrease: () => void;
+  onDecrease: () => void;
+}
+
+function ArticleCard({ article, qty, index, onIncrease, onDecrease }: ArticleCardProps) {
+  const { ref, inView } = useInView();
+  const delay = Math.min(index, 7) * 60;
+
+  return (
+    <div
+      ref={ref}
+      className={`bg-card border rounded-2xl overflow-hidden shadow-sm flex flex-col ${inView ? "article-card-in" : "opacity-0"}`}
+      style={inView ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      <div className="aspect-square bg-muted relative overflow-hidden group">
+        {article.image_url ? (
+          <img
+            src={article.image_url}
+            alt={article.nom}
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center transition-transform duration-700 ease-out group-hover:scale-110">
+            <ShoppingBag size={32} className="text-primary/40" />
+          </div>
+        )}
+        {qty > 0 && (
+          <div className="absolute top-2 right-2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold shadow">
+            {qty}
+          </div>
+        )}
+      </div>
+      <div className="p-3 flex-1 flex flex-col">
+        <div className="font-semibold leading-tight mb-0.5">{article.nom}</div>
+        <div className="text-primary font-bold mb-1">{article.prix.toFixed(2)} €</div>
+        <div className={`text-xs mb-2 font-medium ${article.stock_disponible <= 3 ? "text-orange-500" : "text-muted-foreground"}`}>
+          {article.stock_disponible <= 0 ? "Épuisé" : `${article.stock_disponible} restant${article.stock_disponible > 1 ? "s" : ""}`}
+        </div>
+        <div className="mt-auto">
+          {article.stock_disponible > 0 ? (
+            <div className="flex items-center justify-between bg-muted rounded-full p-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full shrink-0" onClick={onDecrease} disabled={!qty}>
+                <Minus size={16} />
+              </Button>
+              <span className="font-semibold w-8 text-center">{qty}</span>
+              <Button variant="default" size="icon" className="h-8 w-8 rounded-full shrink-0" onClick={onIncrease} disabled={qty >= article.stock_disponible}>
+                <Plus size={16} />
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center text-sm font-medium text-destructive py-2 bg-destructive/10 rounded-full">
+              Épuisé
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
