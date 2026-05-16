@@ -106,16 +106,15 @@ router.post("/events/:eventId/orders", async (req, res) => {
       return res.status(400).json({ error: "Les ventes sont actuellement fermées." });
     }
 
-    // Check name uniqueness (case-insensitive) — ignore expired/cancelled orders
+    // Check name uniqueness (case-insensitive) — all statuses block reuse
     const existing = await db.select().from(commandesTable)
       .where(and(
         eq(commandesTable.evenement_id, eventId),
-        sql`LOWER(${commandesTable.nom_commande}) = ${normalizedName}`,
-        sql`${commandesTable.statut} NOT IN ('expiree')`
+        sql`LOWER(${commandesTable.nom_commande}) = ${normalizedName}`
       )).limit(1);
 
     if (existing.length > 0) {
-      return res.status(400).json({ error: `Le nom "${nom_commande}" est déjà utilisé pour cet événement. Choisissez un autre nom ou attendez que votre précédente commande expire.` });
+      return res.status(409).json({ error: `Le nom "${nom_commande}" est déjà utilisé pour cet événement.`, existingOrder: existing[0] });
     }
 
     // Get articles and calculate total
@@ -279,6 +278,121 @@ router.post("/orders/:id/reserve", async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     req.log.error({ err }, "Reserve order error");
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/orders/:id/reactivate", async (req, res) => {
+  const orderId = parseInt(req.params.id);
+  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid id" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const orderResult = await client.query("SELECT * FROM commandes WHERE id = $1 FOR UPDATE", [orderId]);
+    if (orderResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Order not found" });
+    }
+    const order = orderResult.rows[0];
+
+    if (order.statut !== "expiree") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "Only expired orders can be reactivated" });
+    }
+
+    const itemsResult = await client.query(
+      "SELECT ci.*, a.nom as article_nom FROM commande_items ci JOIN articles a ON ci.article_id = a.id WHERE ci.commande_id = $1",
+      [orderId]
+    );
+    const items = itemsResult.rows;
+
+    const paramsResult = await client.query(
+      "SELECT temps_reservation_minutes FROM parametrage WHERE evenement_id = $1",
+      [order.evenement_id]
+    );
+    const minutes = paramsResult.rows[0]?.temps_reservation_minutes ?? 20;
+    const expireAt = new Date(Date.now() + minutes * 60 * 1000);
+
+    const insufficientItems: { article: string; demande: number; disponible: number }[] = [];
+    for (const item of items) {
+      const stockResult = await client.query(`
+        SELECT a.stock_total
+          - COALESCE((SELECT SUM(r.quantite_reservee) FROM reservations r WHERE r.article_id = a.id AND r.active = true AND r.expire_at > NOW()), 0)
+          - COALESCE((SELECT SUM(ci2.quantite) FROM commande_items ci2 JOIN commandes c2 ON ci2.commande_id = c2.id WHERE ci2.article_id = a.id AND ci2.statut_livraison = 'non_livre' AND c2.statut IN ('payee', 'livree_partiellement')), 0)
+          AS stock_disponible
+        FROM articles a WHERE a.id = $1 FOR UPDATE
+      `, [item.article_id]);
+      const stockDisponible = parseInt(stockResult.rows[0]?.stock_disponible ?? 0);
+      if (stockDisponible < item.quantite) {
+        insufficientItems.push({ article: item.article_nom, demande: item.quantite, disponible: stockDisponible });
+      }
+    }
+
+    if (insufficientItems.length > 0) {
+      await client.query("ROLLBACK");
+      return res.status(409).json({ error: "Stock insuffisant pour réactiver la commande", details: insufficientItems });
+    }
+
+    for (const item of items) {
+      await client.query(
+        "INSERT INTO reservations (commande_id, article_id, quantite_reservee, expire_at, active) VALUES ($1, $2, $3, $4, true)",
+        [orderId, item.article_id, item.quantite, expireAt]
+      );
+    }
+
+    await client.query(
+      "UPDATE commandes SET statut = 'reservee', expiration_reservation = $1, updated_at = NOW() WHERE id = $2",
+      [expireAt, orderId]
+    );
+
+    await client.query("COMMIT");
+    const fullOrder = await getOrderWithItems(orderId);
+    res.json(fullOrder);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    req.log.error({ err }, "Reactivate order error");
+    res.status(500).json({ error: "Internal server error" });
+  } finally {
+    client.release();
+  }
+});
+
+router.post("/orders/:id/cancel-reservation", async (req, res) => {
+  const orderId = parseInt(req.params.id);
+  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid id" });
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const orderResult = await client.query("SELECT * FROM commandes WHERE id = $1 FOR UPDATE", [orderId]);
+    if (orderResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Order not found" });
+    }
+    const order = orderResult.rows[0];
+
+    if (order.statut !== "reservee") {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ error: "La commande doit être en statut 'reservee' pour annuler la réservation" });
+    }
+
+    await client.query("UPDATE reservations SET active = false WHERE commande_id = $1", [orderId]);
+    await client.query(
+      "UPDATE commandes SET statut = 'en_attente', expiration_reservation = NULL, updated_at = NOW() WHERE id = $1",
+      [orderId]
+    );
+
+    await client.query("COMMIT");
+    const fullOrder = await getOrderWithItems(orderId);
+    res.json(fullOrder);
+  } catch (err) {
+    await client.query("ROLLBACK");
+    req.log.error({ err }, "Cancel reservation error");
     res.status(500).json({ error: "Internal server error" });
   } finally {
     client.release();

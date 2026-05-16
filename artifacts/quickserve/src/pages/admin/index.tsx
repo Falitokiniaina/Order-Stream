@@ -6,7 +6,8 @@ import {
   useGetDashboard, getGetDashboardQueryKey,
   useGetSettings, getGetSettingsQueryKey, useUpdateSettings,
   useListArticles, getListArticlesQueryKey,
-  useCreateArticle, useUpdateArticle, useDeleteArticle
+  useCreateArticle, useUpdateArticle, useDeleteArticle,
+  useListOrders, getListOrdersQueryKey
 } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,8 +19,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -99,19 +100,23 @@ function AdminContent() {
       <main className="flex-1 p-4 max-w-6xl mx-auto w-full">
         {selectedEventId ? (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="mb-6 grid grid-cols-3 h-14 bg-muted/50 p-1">
-              <TabsTrigger value="dashboard" className="text-base h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <BarChart3 size={18} className="mr-2" /> Tableau de bord
+            <TabsList className="mb-6 grid grid-cols-4 h-14 bg-muted/50 p-1">
+              <TabsTrigger value="dashboard" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <BarChart3 size={16} className="mr-1.5" /> Tableau de bord
               </TabsTrigger>
-              <TabsTrigger value="stock" className="text-base h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <PackageIcon size={18} className="mr-2" /> Stock & Menu
+              <TabsTrigger value="commandes" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <List size={16} className="mr-1.5" /> Commandes
               </TabsTrigger>
-              <TabsTrigger value="config" className="text-base h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
-                <Settings size={18} className="mr-2" /> Configuration
+              <TabsTrigger value="stock" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <PackageIcon size={16} className="mr-1.5" /> Stock & Menu
+              </TabsTrigger>
+              <TabsTrigger value="config" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Settings size={16} className="mr-1.5" /> Configuration
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard"><DashboardTab eventId={selectedEventId} /></TabsContent>
+            <TabsContent value="commandes"><CommandesTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="stock"><StockTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="config"><ConfigTab eventId={selectedEventId} /></TabsContent>
           </Tabs>
@@ -231,12 +236,14 @@ function DashboardTab({ eventId }: { eventId: number }) {
           ) : (
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topArticlesData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <BarChart data={topArticlesData} layout="vertical" margin={{ top: 5, right: 50, left: 10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
-                  <RechartsTooltip />
-                  <Bar dataKey="ventes" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 12 }} />
+                  <RechartsTooltip formatter={(v: number, name: string) => [name === "ventes" ? `${v} vendus` : `${v.toFixed(2)} €`, name === "ventes" ? "Quantité" : "CA"]} />
+                  <Bar dataKey="ventes" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                    <LabelList dataKey="ventes" position="right" style={{ fontSize: 12, fontWeight: "bold", fill: "hsl(var(--foreground))" }} />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -422,6 +429,114 @@ function StockTab({ eventId }: { eventId: number }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function CommandesTab({ eventId }: { eventId: number }) {
+  const { data: orders } = useListOrders(eventId, {
+    query: { enabled: !!eventId, queryKey: getListOrdersQueryKey(eventId), refetchInterval: 15000 }
+  });
+  const [search, setSearch] = useState("");
+  const [filterStatut, setFilterStatut] = useState<string>("tous");
+
+  const filtered = useMemo(() => {
+    if (!orders) return [];
+    return orders.filter(o => {
+      const matchSearch = !search || o.nom_commande.toLowerCase().includes(search.toLowerCase());
+      const matchStatut = filterStatut === "tous" || o.statut === filterStatut;
+      return matchSearch && matchStatut;
+    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [orders, search, filterStatut]);
+
+  const statutColors: Record<string, string> = {
+    en_attente: "bg-gray-100 text-gray-700",
+    reservee: "bg-amber-100 text-amber-700",
+    payee: "bg-blue-100 text-blue-700",
+    livree_partiellement: "bg-purple-100 text-purple-700",
+    livree: "bg-green-100 text-green-700",
+    expiree: "bg-red-100 text-red-700",
+  };
+  const statutLabels: Record<string, string> = {
+    en_attente: "En attente",
+    reservee: "Réservée",
+    payee: "Payée",
+    livree_partiellement: "Part. livrée",
+    livree: "Livrée",
+    expiree: "Expirée",
+  };
+
+  const totalCA = filtered.filter(o => ["payee", "livree_partiellement", "livree"].includes(o.statut)).reduce((s, o) => s + o.montant_total, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+          <Input placeholder="Rechercher un nom..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={filterStatut} onValueChange={setFilterStatut}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Tous les statuts" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="tous">Tous les statuts</SelectItem>
+            {Object.entries(statutLabels).map(([key, label]) => (
+              <SelectItem key={key} value={key}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{filtered.length}</span> commande{filtered.length !== 1 ? "s" : ""}
+          {totalCA > 0 && <span className="ml-2 text-primary font-bold">· {totalCA.toFixed(2)} € encaissés</span>}
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-card border border-dashed rounded-2xl">
+          <List size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+          <p className="text-muted-foreground font-medium">Aucune commande trouvée.</p>
+        </div>
+      ) : (
+        <div className="bg-card border rounded-2xl overflow-hidden shadow-sm">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold">Heure</th>
+                <th className="px-4 py-3 text-left font-semibold">Nom</th>
+                <th className="px-4 py-3 text-left font-semibold">Articles</th>
+                <th className="px-4 py-3 text-right font-semibold">Total</th>
+                <th className="px-4 py-3 text-right font-semibold">Paiement</th>
+                <th className="px-4 py-3 text-center font-semibold">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map(order => (
+                <tr key={order.id} className="hover:bg-muted/20">
+                  <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                    {new Date(order.created_at).toLocaleString("fr-FR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
+                  </td>
+                  <td className="px-4 py-3 font-bold capitalize">{order.nom_commande}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs max-w-[200px] truncate">
+                    {order.items?.map(i => `${i.quantite}× ${i.article_nom}`).join(", ")}
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-primary">{order.montant_total.toFixed(2)} €</td>
+                  <td className="px-4 py-3 text-right text-xs text-muted-foreground whitespace-nowrap">
+                    {(order.paye_cb ?? 0) > 0 && <span className="mr-1">CB {(order.paye_cb ?? 0).toFixed(2)}€</span>}
+                    {(order.paye_especes ?? 0) > 0 && <span className="mr-1">Esp {(order.paye_especes ?? 0).toFixed(2)}€</span>}
+                    {(order.paye_cheque ?? 0) > 0 && <span>Chq {(order.paye_cheque ?? 0).toFixed(2)}€</span>}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statutColors[order.statut] || "bg-muted text-muted-foreground"}`}>
+                      {statutLabels[order.statut] || order.statut}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

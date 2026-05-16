@@ -1602,6 +1602,146 @@ export const useDeliverOrder = <TError = ErrorType<unknown>,
       return useMutation(getDeliverOrderMutationOptions(options));
     }
 
+export const getReactivateOrderUrl = (id: number,) => {
+
+
+
+
+  return `/api/orders/${id}/reactivate`
+}
+
+/**
+ * @summary Reactivate an expired order if stock allows
+ */
+export const reactivateOrder = async (id: number, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getReactivateOrderUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getReactivateOrderMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivateOrder>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactivateOrder>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['reactivateOrder'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactivateOrder>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  reactivateOrder(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactivateOrderMutationResult = NonNullable<Awaited<ReturnType<typeof reactivateOrder>>>
+
+    export type ReactivateOrderMutationError = ErrorType<void>
+
+    /**
+ * @summary Reactivate an expired order if stock allows
+ */
+export const useReactivateOrder = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactivateOrder>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactivateOrder>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getReactivateOrderMutationOptions(options));
+    }
+
+export const getCancelReservationUrl = (id: number,) => {
+
+
+
+
+  return `/api/orders/${id}/cancel-reservation`
+}
+
+/**
+ * @summary Cancel a reservation and reopen order for buyer modification
+ */
+export const cancelReservation = async (id: number, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getCancelReservationUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCancelReservationMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelReservation>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof cancelReservation>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['cancelReservation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelReservation>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  cancelReservation(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelReservationMutationResult = NonNullable<Awaited<ReturnType<typeof cancelReservation>>>
+
+    export type CancelReservationMutationError = ErrorType<void>
+
+    /**
+ * @summary Cancel a reservation and reopen order for buyer modification
+ */
+export const useCancelReservation = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelReservation>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof cancelReservation>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getCancelReservationMutationOptions(options));
+    }
+
 export const getDeliverOrderPartialUrl = (id: number,) => {
 
 

@@ -431,6 +431,48 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/{id}/reactivate:
+    post:
+      operationId: reactivateOrder
+      tags: [orders]
+      summary: Reactivate an expired order if stock allows
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "409":
+          description: Insufficient stock
+
+  /orders/{id}/cancel-reservation:
+    post:
+      operationId: cancelReservation
+      tags: [orders]
+      summary: Cancel a reservation and reopen order for buyer modification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reservation cancelled, order back to en_attente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Order not in reservee status
+
   /orders/{id}/deliver-partial:
     post:
       operationId: deliverOrderPartial

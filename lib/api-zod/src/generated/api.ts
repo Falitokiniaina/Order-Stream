@@ -415,6 +415,68 @@ export const DeliverOrderResponse = zod.object({
 
 
 /**
+ * @summary Reactivate an expired order if stock allows
+ */
+export const ReactivateOrderParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ReactivateOrderResponse = zod.object({
+  "id": zod.number(),
+  "evenement_id": zod.number(),
+  "nom_commande": zod.string(),
+  "statut": zod.enum(['en_attente', 'reservee', 'payee', 'livree_partiellement', 'livree', 'expiree']),
+  "montant_total": zod.number(),
+  "paye_cb": zod.number().optional(),
+  "paye_especes": zod.number().optional(),
+  "paye_cheque": zod.number().optional(),
+  "created_at": zod.string(),
+  "updated_at": zod.string(),
+  "expiration_reservation": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "commande_id": zod.number(),
+  "article_id": zod.number(),
+  "article_nom": zod.string().nullish(),
+  "quantite": zod.number(),
+  "prix_unitaire": zod.number(),
+  "statut_livraison": zod.enum(['non_livre', 'livre'])
+})).optional()
+})
+
+
+/**
+ * @summary Cancel a reservation and reopen order for buyer modification
+ */
+export const CancelReservationParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CancelReservationResponse = zod.object({
+  "id": zod.number(),
+  "evenement_id": zod.number(),
+  "nom_commande": zod.string(),
+  "statut": zod.enum(['en_attente', 'reservee', 'payee', 'livree_partiellement', 'livree', 'expiree']),
+  "montant_total": zod.number(),
+  "paye_cb": zod.number().optional(),
+  "paye_especes": zod.number().optional(),
+  "paye_cheque": zod.number().optional(),
+  "created_at": zod.string(),
+  "updated_at": zod.string(),
+  "expiration_reservation": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "commande_id": zod.number(),
+  "article_id": zod.number(),
+  "article_nom": zod.string().nullish(),
+  "quantite": zod.number(),
+  "prix_unitaire": zod.number(),
+  "statut_livraison": zod.enum(['non_livre', 'livre'])
+})).optional()
+})
+
+
+/**
  * @summary Mark selected items as delivered
  */
 export const DeliverOrderPartialParams = zod.object({
