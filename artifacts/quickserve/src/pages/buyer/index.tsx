@@ -7,7 +7,7 @@ import {
   useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems,
   getOrderByName, Order
 } from "@workspace/api-client-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useInView } from "@/hooks/use-in-view";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ export default function BuyerPage() {
   const [existingOrderConflict, setExistingOrderConflict] = useState<Order | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
   const { data: liveOrder } = useGetOrderByName(event?.id || 0, orderName, {
     query: {
@@ -48,6 +49,18 @@ export default function BuyerPage() {
       refetchInterval: 8000
     }
   });
+
+  useEffect(() => {
+    const exp = liveOrder?.expiration_reservation;
+    if (!exp) { setSecondsLeft(null); return; }
+    const compute = () => {
+      const secs = Math.max(0, Math.floor((new Date(exp).getTime() - Date.now()) / 1000));
+      setSecondsLeft(secs);
+    };
+    compute();
+    const id = setInterval(compute, 1000);
+    return () => clearInterval(id);
+  }, [liveOrder?.expiration_reservation]);
 
   const createOrder = useCreateOrder();
   const reserveOrder = useReserveOrder();
@@ -276,6 +289,26 @@ export default function BuyerPage() {
                 <p className="font-black text-amber-900 text-lg">RENDEZ-VOUS À LA CAISSE</p>
                 <p className="text-sm text-amber-700 mt-1">Donnez votre nom <strong>{orderName}</strong> au caissier</p>
               </div>
+              {secondsLeft !== null && (
+                <div className={`mt-3 rounded-xl p-3 text-center border transition-colors ${
+                  secondsLeft < 120
+                    ? "bg-red-50 border-red-300 text-red-700"
+                    : "bg-amber-50/70 border-amber-200 text-amber-800"
+                }`}>
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Clock size={16} className={secondsLeft < 120 ? "text-red-500 animate-pulse" : "text-amber-500"} />
+                    <span className="text-xs font-semibold uppercase tracking-wider">
+                      Articles réservés pendant {settings?.temps_reservation_minutes ?? "?"} min
+                    </span>
+                  </div>
+                  <div className={`text-3xl font-black tabular-nums ${secondsLeft < 120 ? "text-red-600" : "text-amber-700"}`}>
+                    {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}
+                  </div>
+                  <p className={`text-xs mt-1 font-medium ${secondsLeft < 120 ? "text-red-600 font-bold" : "text-amber-700"}`}>
+                    {secondsLeft < 120 ? "⚠ Dépêchez-vous, le temps est presque écoulé !" : "Allez vite en caisse pour valider votre commande !"}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
