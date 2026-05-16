@@ -284,6 +284,42 @@ router.post("/orders/:id/reserve", async (req, res) => {
   }
 });
 
+router.put("/orders/:id/items", async (req, res) => {
+  const orderId = parseInt(req.params.id);
+  if (isNaN(orderId)) return res.status(400).json({ error: "Invalid id" });
+
+  const { items } = req.body as { items: { article_id: number; quantite: number }[] };
+  if (!items || items.length === 0) return res.status(400).json({ error: "Items required" });
+
+  const order = await db.select().from(commandesTable).where(eq(commandesTable.id, orderId)).limit(1);
+  if (!order.length) return res.status(404).json({ error: "Order not found" });
+  if (order[0].statut !== "en_attente") return res.status(400).json({ error: "Can only update items for en_attente orders" });
+
+  const articleIds = items.map(i => i.article_id);
+  const articles = await db.select().from(articlesTable).where(inArray(articlesTable.id, articleIds));
+
+  await db.delete(commandeItemsTable).where(eq(commandeItemsTable.commande_id, orderId));
+
+  let total = 0;
+  for (const item of items) {
+    const article = articles.find(a => a.id === item.article_id);
+    if (!article) continue;
+    const lineTotal = article.prix * item.quantite;
+    total += lineTotal;
+    await db.insert(commandeItemsTable).values({
+      commande_id: orderId,
+      article_id: item.article_id,
+      quantite: item.quantite,
+      prix_unitaire: article.prix,
+      statut_livraison: "non_livre"
+    });
+  }
+
+  await db.update(commandesTable).set({ montant_total: total.toString(), updated_at: new Date() }).where(eq(commandesTable.id, orderId));
+  const fullOrder = await getOrderWithItems(orderId);
+  res.json(fullOrder);
+});
+
 router.post("/orders/:id/reactivate", async (req, res) => {
   const orderId = parseInt(req.params.id);
   if (isNaN(orderId)) return res.status(400).json({ error: "Invalid id" });

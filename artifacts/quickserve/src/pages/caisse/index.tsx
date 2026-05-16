@@ -131,16 +131,16 @@ function CaisseContent({ slug }: { slug: string }) {
           <TabsList className="mb-6 h-12 bg-muted/50 p-1">
             <TabsTrigger value="attente" className="h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <Clock size={16} className="mr-2" />
-              En attente
+              Réservées à payer
               {reservedOrders.length > 0 && <span className="ml-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">{reservedOrders.length}</span>}
-            </TabsTrigger>
-            <TabsTrigger value="historique" className="h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
-              <History size={16} className="mr-2" />
-              Historique ({historique.length})
             </TabsTrigger>
             <TabsTrigger value="expirees" className="h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
               <AlertTriangle size={16} className="mr-2" />
               Expirées ({expiredOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="historique" className="h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+              <History size={16} className="mr-2" />
+              Historique ({historique.length})
             </TabsTrigger>
           </TabsList>
 

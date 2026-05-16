@@ -431,6 +431,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/{id}/items:
+    put:
+      operationId: updateOrderItems
+      tags: [orders]
+      summary: Replace items of an en_attente order and recalculate total
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Order not in en_attente status
+
   /orders/{id}/reactivate:
     post:
       operationId: reactivateOrder

@@ -415,6 +415,45 @@ export const DeliverOrderResponse = zod.object({
 
 
 /**
+ * @summary Replace items of an en_attente order and recalculate total
+ */
+export const UpdateOrderItemsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateOrderItemsBody = zod.object({
+  "nom_commande": zod.string(),
+  "items": zod.array(zod.object({
+  "article_id": zod.number(),
+  "quantite": zod.number()
+}))
+})
+
+export const UpdateOrderItemsResponse = zod.object({
+  "id": zod.number(),
+  "evenement_id": zod.number(),
+  "nom_commande": zod.string(),
+  "statut": zod.enum(['en_attente', 'reservee', 'payee', 'livree_partiellement', 'livree', 'expiree']),
+  "montant_total": zod.number(),
+  "paye_cb": zod.number().optional(),
+  "paye_especes": zod.number().optional(),
+  "paye_cheque": zod.number().optional(),
+  "created_at": zod.string(),
+  "updated_at": zod.string(),
+  "expiration_reservation": zod.string().nullish(),
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "commande_id": zod.number(),
+  "article_id": zod.number(),
+  "article_nom": zod.string().nullish(),
+  "quantite": zod.number(),
+  "prix_unitaire": zod.number(),
+  "statut_livraison": zod.enum(['non_livre', 'livre'])
+})).optional()
+})
+
+
+/**
  * @summary Reactivate an expired order if stock allows
  */
 export const ReactivateOrderParams = zod.object({

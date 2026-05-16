@@ -33,6 +33,7 @@ function PreparateurContent({ slug }: { slug: string }) {
   });
 
   const [searchHistory, setSearchHistory] = useState("");
+  const [searchToPrepare, setSearchToPrepare] = useState("");
   const [selectedOrderForPartial, setSelectedOrderForPartial] = useState<number | null>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
@@ -43,10 +44,12 @@ function PreparateurContent({ slug }: { slug: string }) {
 
   const toPrepare = useMemo(() => {
     if (!orders) return [];
-    return orders
-      .filter(o => o.statut === 'payee' || o.statut === 'livree_partiellement')
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }, [orders]);
+    let list = orders.filter(o => o.statut === 'payee' || o.statut === 'livree_partiellement');
+    if (searchToPrepare) {
+      list = list.filter(o => o.nom_commande.toLowerCase().includes(searchToPrepare.toLowerCase()));
+    }
+    return list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }, [orders, searchToPrepare]);
 
   const history = useMemo(() => {
     if (!orders) return [];
@@ -138,6 +141,15 @@ function PreparateurContent({ slug }: { slug: string }) {
           </TabsList>
           
           <TabsContent value="todo">
+            <div className="mb-4 relative max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+              <Input
+                placeholder="Rechercher un nom..."
+                value={searchToPrepare}
+                onChange={(e) => setSearchToPrepare(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             {toPrepare.length === 0 ? (
               <div className="text-center py-20 bg-card border rounded-2xl">
                 <ChefHat size={64} className="mx-auto text-muted-foreground/30 mb-4" />

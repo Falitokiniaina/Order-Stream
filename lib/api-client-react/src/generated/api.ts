@@ -1602,6 +1602,78 @@ export const useDeliverOrder = <TError = ErrorType<unknown>,
       return useMutation(getDeliverOrderMutationOptions(options));
     }
 
+export const getUpdateOrderItemsUrl = (id: number,) => {
+
+
+
+
+  return `/api/orders/${id}/items`
+}
+
+/**
+ * @summary Replace items of an en_attente order and recalculate total
+ */
+export const updateOrderItems = async (id: number,
+    orderInput: OrderInput, options?: RequestInit): Promise<Order> => {
+
+  return customFetch<Order>(getUpdateOrderItemsUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      orderInput,)
+  }
+);}
+
+
+
+
+export const getUpdateOrderItemsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderItems>>, TError,{id: number;data: BodyType<OrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrderItems>>, TError,{id: number;data: BodyType<OrderInput>}, TContext> => {
+
+const mutationKey = ['updateOrderItems'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrderItems>>, {id: number;data: BodyType<OrderInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateOrderItems(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderItemsMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrderItems>>>
+    export type UpdateOrderItemsMutationBody = BodyType<OrderInput>
+    export type UpdateOrderItemsMutationError = ErrorType<void>
+
+    /**
+ * @summary Replace items of an en_attente order and recalculate total
+ */
+export const useUpdateOrderItems = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderItems>>, TError,{id: number;data: BodyType<OrderInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrderItems>>,
+        TError,
+        {id: number;data: BodyType<OrderInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateOrderItemsMutationOptions(options));
+    }
+
 export const getReactivateOrderUrl = (id: number,) => {
 
 

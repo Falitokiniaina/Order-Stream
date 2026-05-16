@@ -4,7 +4,7 @@ import {
   useGetSettings, getGetSettingsQueryKey,
   useListArticles, getListArticlesQueryKey,
   useGetOrderByName, getGetOrderByNameQueryKey,
-  useCreateOrder, useReserveOrder, useCancelReservation,
+  useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems,
   getOrderByName, Order
 } from "@workspace/api-client-react";
 import { useState } from "react";
@@ -38,6 +38,7 @@ export default function BuyerPage() {
 
   const [existingOrderConflict, setExistingOrderConflict] = useState<Order | null>(null);
   const [showConflictDialog, setShowConflictDialog] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
 
   const { data: liveOrder } = useGetOrderByName(event?.id || 0, orderName, {
     query: {
@@ -50,6 +51,7 @@ export default function BuyerPage() {
   const createOrder = useCreateOrder();
   const reserveOrder = useReserveOrder();
   const cancelReservation = useCancelReservation();
+  const updateOrderItems = useUpdateOrderItems();
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,11 +77,12 @@ export default function BuyerPage() {
       existingOrderConflict.items?.forEach(item => {
         cartItems[item.article_id] = item.quantite;
       });
+      setEditingOrderId(existingOrderConflict.id);
       setCart(cartItems);
       setShowConflictDialog(false);
       setExistingOrderConflict(null);
       setStep("catalog");
-      toast({ title: "Commande rouverte", description: "Vous pouvez modifier vos articles." });
+      toast({ title: "Commande rouverte", description: "Modifiez vos articles puis cliquez sur Réserver." });
     } catch {
       toast({ title: "Erreur", description: "Impossible de rouvrir la commande.", variant: "destructive" });
     }
@@ -109,10 +112,9 @@ export default function BuyerPage() {
 
       let orderId: number;
 
-      const existingEnAttente = existingOrderConflict?.statut === "en_attente" ? existingOrderConflict : null;
-
-      if (existingEnAttente) {
-        orderId = existingEnAttente.id;
+      if (editingOrderId) {
+        await updateOrderItems.mutateAsync({ id: editingOrderId, data: { nom_commande: orderName, items } });
+        orderId = editingOrderId;
       } else {
         const order = await createOrder.mutateAsync({ eventId: event.id, data: { nom_commande: orderName, items } });
         orderId = order.id;
@@ -120,6 +122,7 @@ export default function BuyerPage() {
 
       await reserveOrder.mutateAsync({ id: orderId });
       setCart({});
+      setEditingOrderId(null);
       setExistingOrderConflict(null);
       setStep("status");
     } catch (e: any) {
