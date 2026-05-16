@@ -5,7 +5,7 @@ import { LoginInputRole } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChefHat, Check, Package, Search, ListTodo } from "lucide-react";
+import { ChefHat, Check, Package, Search, ListTodo, ClipboardList } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -35,6 +35,7 @@ function PreparateurContent({ slug }: { slug: string }) {
   const [searchHistory, setSearchHistory] = useState("");
   const [searchToPrepare, setSearchToPrepare] = useState("");
   const [selectedOrderForPartial, setSelectedOrderForPartial] = useState<number | null>(null);
+  const [showArticlesPopup, setShowArticlesPopup] = useState(false);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   
   const queryClient = useQueryClient();
@@ -42,14 +43,31 @@ function PreparateurContent({ slug }: { slug: string }) {
   const deliverOrder = useDeliverOrder();
   const deliverPartial = useDeliverOrderPartial();
 
-  const toPrepare = useMemo(() => {
+  const allToPrepare = useMemo(() => {
     if (!orders) return [];
-    let list = orders.filter(o => o.statut === 'payee' || o.statut === 'livree_partiellement');
+    return orders.filter(o => o.statut === 'payee' || o.statut === 'livree_partiellement');
+  }, [orders]);
+
+  const toPrepare = useMemo(() => {
+    let list = allToPrepare;
     if (searchToPrepare) {
       list = list.filter(o => o.nom_commande.toLowerCase().includes(searchToPrepare.toLowerCase()));
     }
     return list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  }, [orders, searchToPrepare]);
+  }, [allToPrepare, searchToPrepare]);
+
+  const articlesToPrepare = useMemo(() => {
+    const map = new Map<number, { nom: string; quantite: number }>();
+    allToPrepare.forEach(order => {
+      order.items?.forEach(item => {
+        if (item.statut_livraison === 'non_livre') {
+          const prev = map.get(item.article_id) || { nom: item.article_nom ?? "", quantite: 0 };
+          map.set(item.article_id, { nom: item.article_nom ?? prev.nom, quantite: prev.quantite + item.quantite });
+        }
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => b.quantite - a.quantite);
+  }, [allToPrepare]);
 
   const history = useMemo(() => {
     if (!orders) return [];
@@ -118,13 +136,19 @@ function PreparateurContent({ slug }: { slug: string }) {
           
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
-              <div className="text-3xl font-black">{summary?.en_attente || 0 + (summary?.reservee || 0) + (summary?.payee || 0) + (summary?.livree_partiellement || 0)}</div>
-              <div className="text-xs font-semibold uppercase tracking-wider opacity-80">Commandes actives</div>
+              <div className="text-3xl font-black">{allToPrepare.length}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider opacity-80">NB commandes à livrer</div>
             </div>
-            <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
+            <button
+              className="bg-primary-foreground/10 rounded-lg p-3 text-center hover:bg-primary-foreground/20 transition-colors cursor-pointer group"
+              onClick={() => setShowArticlesPopup(true)}
+            >
               <div className="text-3xl font-black">{summary?.articles_a_preparer || 0}</div>
-              <div className="text-xs font-semibold uppercase tracking-wider opacity-80">Articles à préparer</div>
-            </div>
+              <div className="text-xs font-semibold uppercase tracking-wider opacity-80 flex items-center justify-center gap-1">
+                <ClipboardList size={12} className="group-hover:scale-110 transition-transform" />
+                Articles à préparer
+              </div>
+            </button>
             <div className="bg-primary-foreground/10 rounded-lg p-3 text-center">
               <div className="text-3xl font-black">{summary?.livrees_aujourd_hui || 0}</div>
               <div className="text-xs font-semibold uppercase tracking-wider opacity-80">Livrées (Aujourd'hui)</div>
@@ -266,6 +290,54 @@ function PreparateurContent({ slug }: { slug: string }) {
             <Button onClick={handleDeliverPartialSubmit} disabled={selectedItems.length === 0 || deliverPartial.isPending}>
               Valider la livraison
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showArticlesPopup} onOpenChange={setShowArticlesPopup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList size={20} className="text-primary" />
+              Articles à préparer
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            {articlesToPrepare.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Aucun article à préparer.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="border-b">
+                  <tr className="text-muted-foreground uppercase text-xs tracking-wider">
+                    <th className="pb-2 text-left font-semibold">Article</th>
+                    <th className="pb-2 text-right font-semibold">Quantité à préparer</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {articlesToPrepare.map((a, i) => (
+                    <tr key={i} className="hover:bg-muted/30">
+                      <td className="py-3 font-medium">{a.nom}</td>
+                      <td className="py-3 text-right">
+                        <span className="bg-primary text-primary-foreground font-black text-lg px-3 py-1 rounded-full">
+                          {a.quantite}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="border-t">
+                  <tr>
+                    <td className="pt-3 font-bold text-muted-foreground">Total</td>
+                    <td className="pt-3 text-right font-black text-primary text-lg">
+                      {articlesToPrepare.reduce((s, a) => s + a.quantite, 0)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowArticlesPopup(false)}>Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

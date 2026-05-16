@@ -158,14 +158,16 @@ export default function BuyerPage() {
         <div className="w-full max-w-md space-y-8 text-center">
           <Store size={64} className="mx-auto text-primary" strokeWidth={1.5} />
           <div>
-            <h1 className="text-4xl font-black mb-2">{event.nom}</h1>
-            <p className="text-muted-foreground text-lg">Entrez un nom pour votre commande</p>
+            <h1 className="text-4xl font-black mb-4">{event.nom}</h1>
+            <div className="bg-primary/10 border border-primary/30 rounded-2xl px-6 py-4 inline-block">
+              <p className="text-primary text-xl font-black">Entrez un nom pour votre commande</p>
+            </div>
           </div>
           <form onSubmit={handleNameSubmit} className="space-y-4">
             <Input
               value={orderName}
               onChange={(e) => setOrderName(e.target.value)}
-              placeholder="Votre prénom ou surnom"
+              placeholder="Exemple : votre prénom ou surnom"
               className="text-xl py-6 text-center"
               autoFocus
             />

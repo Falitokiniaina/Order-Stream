@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -303,6 +303,29 @@ function StockTab({ eventId }: { eventId: number }) {
     }
   };
 
+  const handleImageUpload = async (articleId: number, file: File) => {
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+      await new Promise<void>(resolve => { img.onload = () => resolve(); });
+      const MAX = 400;
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
+      await updateArticle.mutateAsync({ id: articleId, data: { image_url: dataUrl } });
+      queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
+      toast({ title: "Image mise à jour" });
+    } catch (e) {
+      toast({ title: "Erreur lors de l'upload", variant: "destructive" });
+    }
+  };
+
   const handleCreateArticle = async () => {
     if (!newArticleForm.nom.trim() || !newArticleForm.prix || !newArticleForm.stock_total) return;
     try {
@@ -336,6 +359,7 @@ function StockTab({ eventId }: { eventId: number }) {
         <table className="w-full text-sm text-left">
           <thead className="bg-muted/50 text-muted-foreground uppercase tracking-wider text-xs border-b">
             <tr>
+              <th className="px-4 py-3 font-semibold w-12">Image</th>
               <th className="px-4 py-3 font-semibold">Nom</th>
               <th className="px-4 py-3 font-semibold text-right">Prix</th>
               <th className="px-4 py-3 font-semibold text-right">Stock total</th>
@@ -349,6 +373,26 @@ function StockTab({ eventId }: { eventId: number }) {
               const isEditing = editingId === article.id;
               return (
                 <tr key={article.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3">
+                    <label className="cursor-pointer group relative block w-10 h-10 rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/30 hover:border-primary transition-colors">
+                      {article.image_url ? (
+                        <img src={article.image_url} alt={article.nom} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <Camera size={16} className="text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera size={14} className="text-white" />
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) { handleImageUpload(article.id, f); e.target.value = ""; } }}
+                      />
+                    </label>
+                  </td>
                   <td className="px-4 py-3 font-medium">
                     {isEditing
                       ? <Input value={editForm.nom} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} className="h-8" />
