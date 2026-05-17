@@ -41,6 +41,10 @@ export default function BuyerPage() {
   const [showConflictDialog, setShowConflictDialog] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const [reactivateError, setReactivateError] = useState<{
+    type: "unavailable" | "stock" | "other";
+    items?: { article: string; demande?: number; disponible?: number }[];
+  } | null>(null);
 
   const { data: liveOrder } = useGetOrderByName(event?.id || 0, orderName, {
     query: {
@@ -127,13 +131,11 @@ export default function BuyerPage() {
     } catch (e: any) {
       const data = e?.response?.data;
       if (data?.unavailable && data.unavailable.length > 0) {
-        const names = data.unavailable.map((i: any) => i.article).join(", ");
-        toast({ variant: "destructive", title: "Articles non disponibles", description: `Ces articles ne sont plus en vente : ${names}. Créez une nouvelle commande.` });
+        setReactivateError({ type: "unavailable", items: data.unavailable });
       } else if (data?.details && data.details.length > 0) {
-        const msg = data.details.map((d: any) => `${d.article} : demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
-        toast({ variant: "destructive", title: "Stock insuffisant", description: msg });
+        setReactivateError({ type: "stock", items: data.details });
       } else {
-        toast({ variant: "destructive", title: "Impossible de réactiver", description: "Le stock est insuffisant. Créez une nouvelle commande." });
+        setReactivateError({ type: "other" });
       }
     }
   };
@@ -344,19 +346,58 @@ export default function BuyerPage() {
               <XCircle size={56} className="mx-auto text-destructive mb-3" />
               <h2 className="text-2xl font-black text-destructive mb-2">Commande expirée</h2>
               <p className="text-muted-foreground">Votre réservation n'a pas été payée à temps.</p>
+
+              {reactivateError && (
+                <div className="mt-4 text-left rounded-xl border p-4 bg-background space-y-2">
+                  {reactivateError.type === "unavailable" && (
+                    <>
+                      <p className="font-bold text-destructive text-sm">Réactivation impossible — articles retirés de la vente</p>
+                      <ul className="text-sm space-y-1">
+                        {reactivateError.items?.map((i, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-muted-foreground">
+                            <span className="w-2 h-2 rounded-full bg-destructive shrink-0" />
+                            <span><strong>{i.article}</strong> n'est plus en vente</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-muted-foreground pt-1">Créez une nouvelle commande avec les articles disponibles.</p>
+                    </>
+                  )}
+                  {reactivateError.type === "stock" && (
+                    <>
+                      <p className="font-bold text-amber-700 text-sm">Réactivation impossible — stock insuffisant</p>
+                      <ul className="text-sm space-y-1">
+                        {reactivateError.items?.map((i, idx) => (
+                          <li key={idx} className="flex items-center gap-2 text-muted-foreground">
+                            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                            <span><strong>{i.article}</strong> — demandé : {i.demande}, disponible : {i.disponible}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-muted-foreground pt-1">Créez une nouvelle commande avec des quantités adaptées.</p>
+                    </>
+                  )}
+                  {reactivateError.type === "other" && (
+                    <p className="text-sm text-destructive font-medium">Réactivation impossible. Vérifiez le stock et réessayez, ou créez une nouvelle commande.</p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4 flex flex-col gap-2">
-                <Button
-                  onClick={handleReactivate}
-                  disabled={reactivateOrder.isPending}
-                  className="w-full"
-                >
-                  <RotateCcw size={16} className="mr-2" />
-                  {reactivateOrder.isPending ? "Réactivation..." : "Réactiver ma commande"}
-                </Button>
+                {!reactivateError && (
+                  <Button
+                    onClick={handleReactivate}
+                    disabled={reactivateOrder.isPending}
+                    className="w-full"
+                  >
+                    <RotateCcw size={16} className="mr-2" />
+                    {reactivateOrder.isPending ? "Réactivation..." : "Réactiver ma commande"}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   className="w-full text-muted-foreground"
-                  onClick={() => { setStep("name"); setOrderName(""); setEditingOrderId(null); setCart({}); }}
+                  onClick={() => { setStep("name"); setOrderName(""); setEditingOrderId(null); setCart({}); setReactivateError(null); }}
                 >
                   Créer une nouvelle commande
                 </Button>

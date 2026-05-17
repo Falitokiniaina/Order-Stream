@@ -74,8 +74,14 @@ function CaisseContent({ slug }: { slug: string }) {
     }
   };
 
+  const [reactivateErrors, setReactivateErrors] = useState<Record<number, {
+    type: "unavailable" | "stock" | "other";
+    items?: { article: string; demande?: number; disponible?: number }[];
+  }>>({});
+
   const handleReactivate = async (orderId: number) => {
     if (!event) return;
+    setReactivateErrors(prev => { const next = { ...prev }; delete next[orderId]; return next; });
     try {
       await reactivateOrder.mutateAsync({ id: orderId });
       queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey(event.id) });
@@ -83,13 +89,11 @@ function CaisseContent({ slug }: { slug: string }) {
     } catch (e: any) {
       const data = e?.response?.data;
       if (data?.unavailable && data.unavailable.length > 0) {
-        const names = data.unavailable.map((i: any) => i.article).join(", ");
-        toast({ title: "Articles non disponibles", description: `Ces articles ne sont plus en vente : ${names}. L'acheteur doit créer une nouvelle commande.`, variant: "destructive" });
+        setReactivateErrors(prev => ({ ...prev, [orderId]: { type: "unavailable", items: data.unavailable } }));
       } else if (data?.details && data.details.length > 0) {
-        const msg = data.details.map((d: any) => `${d.article}: demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
-        toast({ title: "Stock insuffisant", description: `L'acheteur doit créer une nouvelle commande. ${msg}`, variant: "destructive" });
+        setReactivateErrors(prev => ({ ...prev, [orderId]: { type: "stock", items: data.details } }));
       } else {
-        toast({ title: "Impossible de réactiver", description: "Stock insuffisant. L'acheteur doit créer une nouvelle commande.", variant: "destructive" });
+        setReactivateErrors(prev => ({ ...prev, [orderId]: { type: "other" } }));
       }
     }
   };
@@ -235,30 +239,70 @@ function CaisseContent({ slug }: { slug: string }) {
                 <p className="text-sm text-muted-foreground">
                   Vous pouvez réactiver une commande expirée si le stock est suffisant. Sinon, l'acheteur devra créer une nouvelle commande.
                 </p>
-                {expiredOrders.map(order => (
-                  <div key={order.id} className="bg-card border border-orange-200 rounded-2xl p-4 flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-black text-lg capitalize">{order.nom_commande}</span>
-                        <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                {expiredOrders.map(order => {
+                  const err = reactivateErrors[order.id];
+                  return (
+                    <div key={order.id} className="bg-card border border-orange-200 rounded-2xl p-4 flex flex-col gap-3">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-black text-lg capitalize">{order.nom_commande}</span>
+                            <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {order.items?.map(i => `${i.quantite}x ${i.article_nom}`).join(", ")}
+                          </div>
+                          <div className="font-bold text-primary mt-1">{order.montant_total.toFixed(2)} €</div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          onClick={() => handleReactivate(order.id)}
+                          disabled={reactivateOrder.isPending}
+                        >
+                          <RotateCcw size={14} className="mr-2" />
+                          Réactiver
+                        </Button>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.items?.map(i => `${i.quantite}x ${i.article_nom}`).join(", ")}
-                      </div>
-                      <div className="font-bold text-primary mt-1">{order.montant_total.toFixed(2)} €</div>
+                      {err && (
+                        <div className="rounded-lg border px-4 py-3 text-sm space-y-1.5 bg-background">
+                          {err.type === "unavailable" && (
+                            <>
+                              <p className="font-semibold text-destructive">Articles retirés de la vente</p>
+                              <ul className="space-y-0.5">
+                                {err.items?.map((i, idx) => (
+                                  <li key={idx} className="flex items-center gap-2 text-muted-foreground">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                                    <span><strong>{i.article}</strong> n'est plus proposé à la vente</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="text-xs text-muted-foreground">L'acheteur doit créer une nouvelle commande.</p>
+                            </>
+                          )}
+                          {err.type === "stock" && (
+                            <>
+                              <p className="font-semibold text-amber-700">Stock insuffisant</p>
+                              <ul className="space-y-0.5">
+                                {err.items?.map((i, idx) => (
+                                  <li key={idx} className="flex items-center gap-2 text-muted-foreground">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                    <span><strong>{i.article}</strong> — demandé : {i.demande}, disponible : {i.disponible}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="text-xs text-muted-foreground">L'acheteur doit créer une nouvelle commande avec des quantités adaptées.</p>
+                            </>
+                          )}
+                          {err.type === "other" && (
+                            <p className="text-destructive font-medium">Réactivation impossible. Vérifiez les stocks ou demandez à l'acheteur de créer une nouvelle commande.</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                      onClick={() => handleReactivate(order.id)}
-                      disabled={reactivateOrder.isPending}
-                    >
-                      <RotateCcw size={14} className="mr-2" />
-                      Réactiver
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </TabsContent>
