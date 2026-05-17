@@ -246,7 +246,7 @@ export default function BuyerPage() {
                     ? "Est-ce votre commande ? Si oui, vous pouvez la reprendre. Sinon, choisissez un autre nom."
                     : "Ce nom est déjà utilisé. Choisissez un nom différent pour votre commande."}
                 </p>
-                {existingOrderConflict.items && existingOrderConflict.items.length > 0 && (
+                {settings?.allow_reprendre_commande && existingOrderConflict.items && existingOrderConflict.items.length > 0 && (
                   <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
                     {existingOrderConflict.items.map(item => (
                       <div key={item.id} className="flex justify-between">

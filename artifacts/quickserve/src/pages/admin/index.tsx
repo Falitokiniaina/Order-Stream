@@ -629,7 +629,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
   const [form, setForm] = useState({
     temps_reservation_minutes: settings?.temps_reservation_minutes || 15,
     vente_ouverte: settings?.vente_ouverte ?? true,
-    allow_reprendre_commande: settings?.allow_reprendre_commande ?? true,
+    allow_reprendre_commande: settings?.allow_reprendre_commande ?? false,
     mdp_caisse: "",
     mdp_preparateur: "",
     mdp_admin: ""
