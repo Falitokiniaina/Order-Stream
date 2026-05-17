@@ -74,9 +74,29 @@ export default function BuyerPage() {
     setNameCheckLoading(true);
     try {
       const existing = await getOrderByName(event.id, orderName.trim());
-      setExistingOrderConflict(existing);
-      setShowConflictDialog(true);
+
+      if (existing.statut === "en_attente") {
+        // Resume silently: load existing cart and continue
+        const cartItems: Record<number, number> = {};
+        existing.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
+        setEditingOrderId(existing.id);
+        setCart(cartItems);
+        setStep("catalog");
+      } else {
+        setExistingOrderConflict(existing);
+        setShowConflictDialog(true);
+      }
     } catch {
+      // No existing order → create it immediately in en_attente
+      try {
+        const newOrder = await createOrder.mutateAsync({
+          eventId: event.id,
+          data: { nom_commande: orderName.trim(), items: [] }
+        });
+        setEditingOrderId(newOrder.id);
+      } catch {
+        // If creation fails, still allow browsing (will create on reserve)
+      }
       setStep("catalog");
     } finally {
       setNameCheckLoading(false);
@@ -130,6 +150,7 @@ export default function BuyerPage() {
         await updateOrderItems.mutateAsync({ id: editingOrderId, data: { nom_commande: orderName, items } });
         orderId = editingOrderId;
       } else {
+        // Fallback: should not happen in normal flow, but kept for safety
         const order = await createOrder.mutateAsync({ eventId: event.id, data: { nom_commande: orderName, items } });
         orderId = order.id;
       }
