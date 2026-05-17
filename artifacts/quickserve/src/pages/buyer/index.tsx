@@ -8,7 +8,7 @@ import {
   getOrderByName, Order
 } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useInView } from "@/hooks/use-in-view";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,10 @@ export default function BuyerPage() {
     }
   });
 
+  const statut = liveOrder?.statut;
+  const isLocked = step === "status" && (statut === "reservee" || statut === "payee" || statut === "livree_partiellement");
+  const wakeLockRef = useRef<any>(null);
+
   useEffect(() => {
     const exp = liveOrder?.expiration_reservation;
     if (!exp) { setSecondsLeft(null); return; }
@@ -67,6 +71,79 @@ export default function BuyerPage() {
     const id = setInterval(compute, 1000);
     return () => clearInterval(id);
   }, [liveOrder?.expiration_reservation]);
+
+  // ── Navigation lock (active tant que la commande n'est pas livrée) ──────────
+  useEffect(() => {
+    if (!isLocked) return;
+
+    // Intercepte le bouton retour matériel / geste swipe arrière
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    // Bloque F5, Ctrl+R, Cmd+R
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "F5" || (e.ctrlKey && e.key === "r") || (e.metaKey && e.key === "r")) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
+    // Désactive le pull-to-refresh et la navigation overscroll
+    document.body.style.overscrollBehavior = "none";
+
+    // Avertit si l'utilisateur tente de fermer l'onglet / quitter la page
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overscrollBehavior = "";
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isLocked]);
+
+  // ── Wake Lock : garde l'écran allumé ────────────────────────────────────────
+  useEffect(() => {
+    if (!isLocked) {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+      return;
+    }
+
+    const requestWakeLock = async () => {
+      try {
+        const nav = navigator as any;
+        if (nav.wakeLock) {
+          wakeLockRef.current = await nav.wakeLock.request("screen");
+        }
+      } catch {
+        // Wake Lock non supporté ou refusé — silencieux
+      }
+    };
+
+    requestWakeLock();
+
+    // Re-acquiert le Wake Lock au retour en premier plan
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [isLocked]);
 
   const createOrder = useCreateOrder();
   const reserveOrder = useReserveOrder();
@@ -329,14 +406,23 @@ export default function BuyerPage() {
   }
 
   if (step === "status") {
-    const statut = liveOrder?.statut;
     const isExpired = statut === "expiree";
     const isReserved = statut === "reservee";
     const isPaid = statut === "payee" || statut === "livree_partiellement";
     const isDelivered = statut === "livree";
 
     return (
-      <div className="min-h-screen bg-background p-4 flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col">
+        {isLocked && (
+          <div className="sticky top-0 z-50 bg-amber-50 border-b-2 border-amber-300 px-4 py-3 flex items-start gap-3 shadow-sm">
+            <span className="text-xl animate-pulse shrink-0 mt-0.5">🔔</span>
+            <div className="flex-1">
+              <p className="font-bold text-amber-900 text-sm leading-tight">Gardez cette page ouverte jusqu'à la livraison</p>
+              <p className="text-amber-700 text-xs mt-0.5 leading-snug">Ne fermez pas cette page, ne l'actualisez pas et ne quittez pas l'application. Vos instructions sont affichées ici en temps réel.</p>
+            </div>
+          </div>
+        )}
+        <div className="flex-1 p-4 flex flex-col items-center justify-center">
         <div className="w-full max-w-md space-y-4">
           <div className="text-center mb-2">
             <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Commande de</p>
@@ -506,6 +592,7 @@ export default function BuyerPage() {
               Nouvelle commande
             </Button>
           )}
+        </div>
         </div>
       </div>
     );

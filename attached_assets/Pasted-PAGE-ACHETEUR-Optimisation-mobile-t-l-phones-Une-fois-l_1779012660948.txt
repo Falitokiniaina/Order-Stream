@@ -1,0 +1,47 @@
+PAGE ACHETEUR – Optimisation mobile (téléphones)
+Une fois la commande réservée par l'utilisateur, appliquer toutes les mesures suivantes jusqu'à confirmation de livraison :
+🔒 Blocage de la navigation
+
+Désactiver le bouton retour arrière (hardware + geste swipe)
+Intercepter F5, Ctrl+R et toute tentative d'actualisation clavier
+Désactiver le "pull-to-refresh" (tirer vers le bas pour actualiser)
+Bloquer la navigation vers une autre URL depuis cette page
+Afficher une alerte de confirmation si l'utilisateur tente de quitter (beforeunload)
+Empêcher la fermeture de l'onglet sans avertissement
+
+📱 Expérience écran
+
+Activer le Wake Lock API pour garder l'écran allumé en permanence
+Empêcher la mise en veille automatique de l'écran
+Maintenir la page visible même si l'app passe en arrière-plan (gérer les événements visibilitychange)
+Au retour en premier plan, forcer le réaffichage de la page de commande
+
+📋 Affichage des instructions
+
+Les instructions de commande doivent rester toujours visibles et non supprimables
+Si l'utilisateur scrolle ou navigue par erreur, ramener automatiquement l'affichage sur les instructions
+Afficher un bandeau fixe récapitulatif en haut de page
+
+🟡 Encart d'avertissement utilisateur — à afficher en permanence
+Créer un encart fixe, visible en permanence sur la page, avec le design suivant :
+
+Fond jaune ambré ou orange doux (ex. #FFF3CD ou #FF9800)
+Icône 🔔 ou ⚠️ bien visible
+Texte principal en gras : "Gardez cette page ouverte jusqu'à la livraison"
+Sous-texte explicatif : "Ne fermez pas cette page, ne l'actualisez pas et ne quittez pas l'application. Vos instructions de livraison sont affichées ici en temps réel."
+Position : bandeau collant en haut de page (position: sticky ou position: fixed, top: 0, z-index: 9999)
+Non fermable, non masquable par l'utilisateur
+Légèrement animé (pulsation douce ou bordure clignotante) pour attirer l'attention sans être agressif
+Disparaît automatiquement uniquement lorsque le statut de commande passe à "Livré"
+
+⚠️ Scénarios à gérer impérativement
+
+Appel entrant → retour sur la page intact
+Notification système → retour sur la page intact
+Changement d'application (multitâche) → retour sur la page intact
+Perte de connexion internet → afficher les infos en cache, ne pas recharger
+Veille écran → à la réactivation, page toujours présente
+Fermeture accidentelle du navigateur → restaurer la session via localStorage / sessionStorage
+Geste "swipe" de fermeture d'onglet sur mobile → intercepter
+Mode économiseur de batterie → maintenir le Wake Lock si possible, sinon avertir l'utilisateur
+
