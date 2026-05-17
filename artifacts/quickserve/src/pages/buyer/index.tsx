@@ -4,7 +4,7 @@ import {
   useGetSettings, getGetSettingsQueryKey,
   useListArticles, getListArticlesQueryKey,
   useGetOrderByName, getGetOrderByNameQueryKey,
-  useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems,
+  useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems, useReactivateOrder,
   getOrderByName, Order
 } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
@@ -66,6 +66,7 @@ export default function BuyerPage() {
   const reserveOrder = useReserveOrder();
   const cancelReservation = useCancelReservation();
   const updateOrderItems = useUpdateOrderItems();
+  const reactivateOrder = useReactivateOrder();
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,30 +75,35 @@ export default function BuyerPage() {
     setNameCheckLoading(true);
     try {
       const existing = await getOrderByName(event.id, orderName.trim());
-      setExistingOrderConflict(existing);
-      setShowConflictDialog(true);
+      if (existing.statut === "en_attente") {
+        // Nom libre mais commande déjà ouverte (même utilisateur qui revient) → reprendre
+        const cartItems: Record<number, number> = {};
+        existing.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
+        setEditingOrderId(existing.id);
+        setCart(cartItems);
+        setStep("catalog");
+      } else {
+        setExistingOrderConflict(existing);
+        setShowConflictDialog(true);
+      }
     } catch {
-      // 404 = name is free, proceed to catalog
-      setStep("catalog");
+      // 404 : nom libre → créer la commande immédiatement pour réserver le nom
+      try {
+        const newOrder = await createOrder.mutateAsync({
+          eventId: event.id,
+          data: { nom_commande: orderName.trim(), items: [] }
+        });
+        setEditingOrderId(newOrder.id);
+        setStep("catalog");
+      } catch (err: any) {
+        if (err?.response?.status === 409) {
+          toast({ variant: "destructive", title: "Nom déjà pris", description: "Ce nom vient d'être utilisé à l'instant. Choisissez un autre nom." });
+        } else {
+          toast({ variant: "destructive", title: "Erreur", description: "Impossible de créer la commande. Réessayez." });
+        }
+      }
     } finally {
       setNameCheckLoading(false);
-    }
-  };
-
-  const createOrderForCart = async (cartItems: Record<number, number>) => {
-    if (!event) return;
-    try {
-      const items = Object.entries(cartItems).map(([id, qty]) => ({ article_id: Number(id), quantite: qty }));
-      const order = await createOrder.mutateAsync({ eventId: event.id, data: { nom_commande: orderName.trim(), items } });
-      setEditingOrderId(order.id);
-    } catch (e: any) {
-      if (e?.response?.status === 409) {
-        toast({ variant: "destructive", title: "Nom déjà pris", description: "Ce nom vient d'être utilisé par quelqu'un d'autre. Choisissez un autre nom." });
-        setCart({});
-        setStep("name");
-      } else {
-        toast({ variant: "destructive", title: "Erreur", description: "Impossible d'enregistrer la commande. Réessayez." });
-      }
     }
   };
 
@@ -120,22 +126,32 @@ export default function BuyerPage() {
     }
   };
 
-  const updateQuantity = (articleId: number, delta: number, max: number) => {
-    const current = cart[articleId] || 0;
-    const next = Math.max(0, Math.min(max, current + delta));
-    const newCart = { ...cart };
-    if (next === 0) delete newCart[articleId];
-    else newCart[articleId] = next;
-
-    const wasEmpty = Object.keys(cart).length === 0;
-    const isNowNonEmpty = Object.keys(newCart).length > 0;
-
-    setCart(newCart);
-
-    // Create order in DB on first item add (when no order exists yet)
-    if (wasEmpty && isNowNonEmpty && !editingOrderId) {
-      createOrderForCart(newCart);
+  const handleReactivate = async () => {
+    if (!liveOrder || !event) return;
+    try {
+      await reactivateOrder.mutateAsync({ id: liveOrder.id });
+      queryClient.invalidateQueries({ queryKey: getGetOrderByNameQueryKey(event.id, orderName) });
+      toast({ title: "Commande réactivée !", description: "Rendez-vous à la caisse pour payer." });
+    } catch (e: any) {
+      const details = e?.response?.data?.details as { article: string; demande: number; disponible: number }[] | undefined;
+      if (details && details.length > 0) {
+        const msg = details.map(d => `${d.article} : demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
+        toast({ variant: "destructive", title: "Stock insuffisant", description: msg });
+      } else {
+        toast({ variant: "destructive", title: "Impossible de réactiver", description: "Le stock est insuffisant. Créez une nouvelle commande." });
+      }
     }
+  };
+
+  const updateQuantity = (articleId: number, delta: number, max: number) => {
+    setCart(prev => {
+      const current = prev[articleId] || 0;
+      const next = Math.max(0, Math.min(max, current + delta));
+      const newCart = { ...prev };
+      if (next === 0) delete newCart[articleId];
+      else newCart[articleId] = next;
+      return newCart;
+    });
   };
 
   const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
@@ -252,11 +268,11 @@ export default function BuyerPage() {
             ) : (
               <>
                 <DialogDescription>
-                  Le nom <strong>"{existingOrderConflict?.nom_commande}"</strong> est déjà enregistré dans le système
+                  Le nom <strong>"{existingOrderConflict?.nom_commande}"</strong> est déjà enregistré
                   {existingOrderConflict?.statut === "expiree" && " (commande expirée)"}
-                  {existingOrderConflict?.statut === "en_attente" && " (commande en cours)"}
                   {existingOrderConflict?.statut === "payee" && " (commande payée)"}
                   {existingOrderConflict?.statut === "livree" && " (commande livrée)"}
+                  {existingOrderConflict?.statut === "livree_partiellement" && " (commande en cours de livraison)"}
                   .
                 </DialogDescription>
                 <p className="text-sm text-muted-foreground">Choisissez un nom différent pour votre commande.</p>
@@ -293,9 +309,23 @@ export default function BuyerPage() {
               <XCircle size={56} className="mx-auto text-destructive mb-3" />
               <h2 className="text-2xl font-black text-destructive mb-2">Commande expirée</h2>
               <p className="text-muted-foreground">Votre réservation n'a pas été payée à temps.</p>
-              <Button className="mt-4 w-full" onClick={() => { setStep("name"); setOrderName(""); }}>
-                Créer une nouvelle commande
-              </Button>
+              <div className="mt-4 flex flex-col gap-2">
+                <Button
+                  onClick={handleReactivate}
+                  disabled={reactivateOrder.isPending}
+                  className="w-full"
+                >
+                  <RotateCcw size={16} className="mr-2" />
+                  {reactivateOrder.isPending ? "Réactivation..." : "Réactiver ma commande"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={() => { setStep("name"); setOrderName(""); setEditingOrderId(null); setCart({}); }}
+                >
+                  Créer une nouvelle commande
+                </Button>
+              </div>
             </div>
           )}
 

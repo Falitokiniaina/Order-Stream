@@ -90,8 +90,8 @@ router.post("/events/:eventId/orders", async (req, res) => {
     items: { article_id: number; quantite: number }[];
   };
 
-  if (!nom_commande || !items || items.length === 0) {
-    return res.status(400).json({ error: "nom_commande and at least one item required" });
+  if (!nom_commande || !items) {
+    return res.status(400).json({ error: "nom_commande and items required" });
   }
 
   const normalizedName = nom_commande.toLowerCase().trim();
