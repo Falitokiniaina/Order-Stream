@@ -90,7 +90,7 @@ router.post("/events/:eventId/orders", async (req, res) => {
     items: { article_id: number; quantite: number }[];
   };
 
-  if (!nom_commande || !items || items.length === 0) {
+  if (!nom_commande || !items) {
     return res.status(400).json({ error: "nom_commande and items required" });
   }
 
@@ -119,7 +119,9 @@ router.post("/events/:eventId/orders", async (req, res) => {
 
     // Get articles and calculate total
     const articleIds = items.map(i => i.article_id);
-    const articles = await db.select().from(articlesTable).where(inArray(articlesTable.id, articleIds));
+    const articles = articleIds.length > 0
+      ? await db.select().from(articlesTable).where(inArray(articlesTable.id, articleIds))
+      : [];
     const articleMap = new Map(articles.map(a => [a.id, a]));
 
     let montant_total = 0;
