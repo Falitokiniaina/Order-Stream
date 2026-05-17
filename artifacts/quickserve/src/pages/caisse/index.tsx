@@ -1,5 +1,6 @@
 import { useRoute } from "wouter";
 import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, usePayOrder, useReactivateOrder } from "@workspace/api-client-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
 import { LoginInputRole } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
@@ -15,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 export default function CaissePage() {
   const [, params] = useRoute("/:slug/caisse");
   const slug = params?.slug;
+  usePageTitle(`Caisse · ${slug ?? ""}`);
   return (
     <PasswordGate role={LoginInputRole.caisse} eventSlug={slug}>
       <CaisseContent slug={slug!} />

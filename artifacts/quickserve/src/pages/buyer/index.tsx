@@ -7,6 +7,7 @@ import {
   useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems, useReactivateOrder,
   getOrderByName, Order
 } from "@workspace/api-client-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useState, useEffect } from "react";
 import { useInView } from "@/hooks/use-in-view";
 import { Input } from "@/components/ui/input";
@@ -19,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 export default function BuyerPage() {
   const [, params] = useRoute("/:slug");
   const slug = params?.slug;
+  usePageTitle(`${slug ?? ""} · QuickServe`);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

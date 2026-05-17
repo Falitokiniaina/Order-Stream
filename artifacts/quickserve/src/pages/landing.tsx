@@ -1,10 +1,12 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useState } from "react";
 import { Flame } from "lucide-react";
 
 export default function Landing() {
+  usePageTitle("QuickServe");
   const [slug, setSlug] = useState("");
   const [, setLocation] = useLocation();
 

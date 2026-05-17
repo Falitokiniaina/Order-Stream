@@ -1,5 +1,6 @@
 import { useRoute } from "wouter";
 import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, useDeliverOrder, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
 import { LoginInputRole } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 export default function PreparateurPage() {
   const [, params] = useRoute("/:slug/preparateur");
   const slug = params?.slug;
+  usePageTitle(`Préparateur · ${slug ?? ""}`);
 
   return (
     <PasswordGate role={LoginInputRole.preparateur} eventSlug={slug}>

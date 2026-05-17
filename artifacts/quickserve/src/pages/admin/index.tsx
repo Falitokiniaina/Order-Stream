@@ -1,5 +1,6 @@
 import { PasswordGate } from "@/components/password-gate";
 import { LoginInputRole } from "@workspace/api-client-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 import {
   useListEvents, getListEventsQueryKey,
   useCreateEvent, useUpdateEvent,
@@ -25,6 +26,7 @@ import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
+  usePageTitle("Admin · QuickServe");
   return (
     <PasswordGate role={LoginInputRole.admin}>
       <AdminContent />
