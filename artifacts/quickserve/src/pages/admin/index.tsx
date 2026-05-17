@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -174,7 +174,7 @@ function AdminContent() {
 }
 
 function DashboardTab({ eventId }: { eventId: number }) {
-  const { data: stats } = useGetDashboard(eventId, { query: { enabled: !!eventId, queryKey: getGetDashboardQueryKey(eventId), refetchInterval: 30000 } });
+  const { data: stats, refetch, isFetching } = useGetDashboard(eventId, { query: { enabled: !!eventId, queryKey: getGetDashboardQueryKey(eventId), refetchInterval: 30000 } });
 
   if (!stats) return <div>Chargement des statistiques...</div>;
 
@@ -201,6 +201,19 @@ function DashboardTab({ eventId }: { eventId: number }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold">Tableau de bord</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="gap-2"
+        >
+          <RefreshCw size={15} className={isFetching ? "animate-spin" : ""} />
+          Rafraîchir
+        </Button>
+      </div>
       <div className="grid md:grid-cols-2 gap-4">
         {/* CA Card */}
         <div className="bg-primary text-primary-foreground p-6 rounded-2xl shadow-sm">
