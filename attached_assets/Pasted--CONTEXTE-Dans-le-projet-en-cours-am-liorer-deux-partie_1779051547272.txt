@@ -1,0 +1,127 @@
+🔷 CONTEXTE
+Dans le projet en cours, améliorer deux parties : la page acheteur et la page admin.
+
+🔷 PARTIE 1 — Collecte des informations d'appareil (page acheteur)
+Lors de la création ou mise à jour d'une commande par un acheteur, collecter automatiquement et silencieusement (côté front + back) toutes les informations techniques disponibles sans demande de permission à l'utilisateur.
+📱 Appareil & Système (via navigator.userAgent et navigator.userAgentData)
+
+Type d'appareil détecté : mobile / tablette / desktop
+Système d'exploitation : nom + version (ex: Windows 11, Android 13, iOS 17)
+Marque et modèle estimés (parsing userAgent)
+Navigateur : nom + version
+
+🖥️ Écran & Matériel
+
+Résolution d'écran (largeur × hauteur)
+Densité de pixels (window.devicePixelRatio)
+Orientation : portrait / paysage
+Nombre de cœurs CPU (navigator.hardwareConcurrency)
+RAM approximative en Go (navigator.deviceMemory)
+Support tactile (oui/non)
+
+🌐 Réseau & Connexion
+
+Type de connexion : wifi / 4G / 5G / ethernet (navigator.connection.effectiveType)
+Vitesse estimée en Mbps (navigator.connection.downlink)
+Économie de données activée (navigator.connection.saveData)
+
+🌍 Localisation approximative (via IP, côté serveur — aucune permission requise)
+
+Adresse IP publique
+Pays, région, ville estimée
+Fournisseur d'accès (FAI / opérateur)
+Coordonnées approximatives (précision ville, pas GPS)
+
+🕐 Contexte & Session
+
+Date et heure serveur (GDH précis)
+Date et heure locale de l'appareil
+Fuseau horaire (Intl.DateTimeFormat().resolvedOptions().timeZone)
+Langue du navigateur (navigator.language)
+Langue(s) préférées (navigator.languages)
+Identifiant de session
+URL exacte de la page au moment de la saisie
+Page précédente (referrer)
+Cookies activés (oui/non)
+Mode "Ne pas pister" activé (navigator.doNotTrack)
+
+
+Créer une nouvelle table en base de données device_info, liée à commandes via order_id :
+device_info
+├── id
+├── order_id              FK → commandes
+│
+├── device_type           mobile | tablet | desktop
+├── os_name               Windows / Android / iOS...
+├── os_version            ex: 11, 13, 17
+├── brand_model           ex: Samsung Galaxy S21 (estimé)
+├── browser_name          Chrome / Safari / Firefox...
+├── browser_version
+│
+├── screen_width
+├── screen_height
+├── pixel_ratio
+├── screen_orientation    portrait | landscape
+├── cpu_cores
+├── ram_gb
+├── touch_support         boolean
+│
+├── connection_type       wifi | 4g | 5g | ethernet
+├── connection_speed_mbps
+├── save_data_mode        boolean
+│
+├── ip_address
+├── ip_country
+├── ip_region
+├── ip_city
+├── ip_isp
+├── ip_lat_approx
+├── ip_lng_approx
+│
+├── timezone
+├── browser_language
+├── browser_languages     json array
+├── session_id
+├── page_url
+├── referrer
+├── cookies_enabled       boolean
+├── do_not_track          boolean
+│
+├── client_datetime       heure locale appareil
+├── server_datetime       heure serveur (référence)
+└── created_at
+
+🔷 PARTIE 2 — Page Admin / Onglet Commandes
+1. Modifier le tableau des commandes :
+
+Ajouter une colonne "Appareil" après la colonne "Statut"
+Afficher une icône adaptative selon le device_type :
+
+🖥️ desktop → icône moniteur
+📱 mobile → icône smartphone
+🖱️ tablette → icône tablette
+
+
+L'icône est cliquable, avec un tooltip au survol affichant OS + Navigateur
+
+2. Popup modal au clic sur l'icône :
+Design moderne et épuré, deux blocs distincts :
+Bloc 1 — 🧾 Résumé commande
+
+Numéro de commande, date, acheteur, montant total, statut (badge coloré)
+
+Bloc 2 — 📱 Informations appareil
+
+Badge visuel en haut : Mobile / Desktop / Tablette + OS + Navigateur
+Grille de cards avec icônes pour chaque info :
+
+Matériel : écran, CPU, RAM, tactile
+Réseau : type connexion, vitesse
+Localisation IP : drapeau pays + ville + FAI
+Temporel : GDH serveur, GDH local, fuseau horaire
+Session : langue, URL, referrer, cookies
+
+
+Mini-carte statique centrée sur la ville estimée (via IP, avec Leaflet.js ou Google Maps embed)
+Bouton fermeture (croix + clic en dehors du modal)
+Animation fluide d'ouverture/fermeture

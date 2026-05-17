@@ -6,6 +6,7 @@ import articlesRouter from "./articles";
 import ordersRouter from "./orders";
 import settingsRouter from "./settings";
 import dashboardRouter from "./dashboard";
+import deviceInfoRouter from "./device-info";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(articlesRouter);
 router.use(ordersRouter);
 router.use(settingsRouter);
 router.use(dashboardRouter);
+router.use(deviceInfoRouter);
 
 export default router;

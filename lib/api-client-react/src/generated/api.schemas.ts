@@ -210,3 +210,103 @@ export interface OrdersSummary {
   articles_a_preparer?: number;
 }
 
+export interface DeviceInfoInput {
+  device_type?: string;
+  os_name?: string;
+  os_version?: string;
+  brand_model?: string;
+  browser_name?: string;
+  browser_version?: string;
+  screen_width?: number;
+  screen_height?: number;
+  pixel_ratio?: number;
+  screen_orientation?: string;
+  cpu_cores?: number;
+  ram_gb?: number;
+  touch_support?: boolean;
+  connection_type?: string;
+  connection_speed_mbps?: number;
+  save_data_mode?: boolean;
+  timezone?: string;
+  browser_language?: string;
+  browser_languages?: string[];
+  session_id?: string;
+  page_url?: string;
+  referrer?: string;
+  cookies_enabled?: boolean;
+  do_not_track?: boolean;
+  client_datetime?: string;
+}
+
+export interface DeviceInfo {
+  id?: number;
+  order_id?: number;
+  /** @nullable */
+  device_type?: string | null;
+  /** @nullable */
+  os_name?: string | null;
+  /** @nullable */
+  os_version?: string | null;
+  /** @nullable */
+  brand_model?: string | null;
+  /** @nullable */
+  browser_name?: string | null;
+  /** @nullable */
+  browser_version?: string | null;
+  /** @nullable */
+  screen_width?: number | null;
+  /** @nullable */
+  screen_height?: number | null;
+  /** @nullable */
+  pixel_ratio?: number | null;
+  /** @nullable */
+  screen_orientation?: string | null;
+  /** @nullable */
+  cpu_cores?: number | null;
+  /** @nullable */
+  ram_gb?: number | null;
+  /** @nullable */
+  touch_support?: boolean | null;
+  /** @nullable */
+  connection_type?: string | null;
+  /** @nullable */
+  connection_speed_mbps?: number | null;
+  /** @nullable */
+  save_data_mode?: boolean | null;
+  /** @nullable */
+  ip_address?: string | null;
+  /** @nullable */
+  ip_country?: string | null;
+  /** @nullable */
+  ip_region?: string | null;
+  /** @nullable */
+  ip_city?: string | null;
+  /** @nullable */
+  ip_isp?: string | null;
+  /** @nullable */
+  ip_lat_approx?: number | null;
+  /** @nullable */
+  ip_lng_approx?: number | null;
+  /** @nullable */
+  timezone?: string | null;
+  /** @nullable */
+  browser_language?: string | null;
+  /** @nullable */
+  browser_languages?: string[] | null;
+  /** @nullable */
+  session_id?: string | null;
+  /** @nullable */
+  page_url?: string | null;
+  /** @nullable */
+  referrer?: string | null;
+  /** @nullable */
+  cookies_enabled?: boolean | null;
+  /** @nullable */
+  do_not_track?: boolean | null;
+  /** @nullable */
+  client_datetime?: string | null;
+  /** @nullable */
+  server_datetime?: string | null;
+  created_at?: string;
+}
+

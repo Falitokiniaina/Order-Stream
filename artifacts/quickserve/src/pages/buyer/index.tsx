@@ -4,9 +4,10 @@ import {
   useGetSettings, getGetSettingsQueryKey,
   useListArticles, getListArticlesQueryKey,
   useGetOrderByName, getGetOrderByNameQueryKey,
-  useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems, useReactivateOrder,
+  useCreateOrder, useReserveOrder, useCancelReservation, useUpdateOrderItems, useReactivateOrder, useSaveDeviceInfo,
   getOrderByName, Order
 } from "@workspace/api-client-react";
+import { collectDeviceInfo } from "@/lib/collect-device-info";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useState, useEffect, useRef } from "react";
 import { useInView } from "@/hooks/use-in-view";
@@ -157,6 +158,8 @@ export default function BuyerPage() {
   const cancelReservation = useCancelReservation();
   const updateOrderItems = useUpdateOrderItems();
   const reactivateOrder = useReactivateOrder();
+  const saveDeviceInfo = useSaveDeviceInfo();
+  const sessionIdRef = useRef<string>(Math.random().toString(36).slice(2) + Date.now().toString(36));
 
   const handleNameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,6 +263,14 @@ export default function BuyerPage() {
       }
 
       await reserveOrder.mutateAsync({ id: orderId });
+
+      // Collecte silencieuse des infos d'appareil — fire-and-forget
+      try {
+        const info = collectDeviceInfo(sessionIdRef.current);
+        // Cast: DeviceInfoInput has optional fields (undefined), our payload uses null for missing — compatible at runtime
+        saveDeviceInfo.mutate({ id: orderId, data: info as Parameters<typeof saveDeviceInfo.mutate>[0]["data"] });
+      } catch { /* silencieux */ }
+
       setCart({});
       setEditingOrderId(null);
       setExistingOrderConflict(null);

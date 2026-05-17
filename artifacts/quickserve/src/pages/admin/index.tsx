@@ -8,7 +8,9 @@ import {
   useGetSettings, getGetSettingsQueryKey, useUpdateSettings,
   useListArticles, getListArticlesQueryKey,
   useCreateArticle, useUpdateArticle, useDeleteArticle,
-  useListOrders, getListOrdersQueryKey
+  useListOrders, getListOrdersQueryKey,
+  useGetDeviceInfo, getGetDeviceInfoQueryKey,
+  type Order, type DeviceInfo
 } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw, Monitor, Smartphone, Tablet, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -533,6 +535,7 @@ function CommandesTab({ eventId }: { eventId: number }) {
   });
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState<string>("tous");
+  const [deviceModalOrder, setDeviceModalOrder] = useState<Order | null>(null);
 
   const filtered = useMemo(() => {
     if (!orders) return [];
@@ -602,6 +605,7 @@ function CommandesTab({ eventId }: { eventId: number }) {
                 <th className="px-4 py-3 text-right font-semibold">Total</th>
                 <th className="px-4 py-3 text-right font-semibold">Paiement</th>
                 <th className="px-4 py-3 text-center font-semibold">Statut</th>
+                <th className="px-4 py-3 text-center font-semibold">Appareil</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -625,11 +629,30 @@ function CommandesTab({ eventId }: { eventId: number }) {
                       {statutLabels[order.statut] || order.statut}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => setDeviceModalOrder(order)}
+                            className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                          >
+                            <Monitor size={16} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>Voir les infos d'appareil</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {deviceModalOrder && (
+        <DeviceInfoModal order={deviceModalOrder} onClose={() => setDeviceModalOrder(null)} />
       )}
     </div>
   );
@@ -728,6 +751,162 @@ function ConfigTab({ eventId }: { eventId: number }) {
           Enregistrer la configuration
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ── DeviceInfoModal ───────────────────────────────────────────────────────────
+const STATUT_COLORS: Record<string, string> = {
+  en_attente: "bg-gray-100 text-gray-700",
+  reservee: "bg-amber-100 text-amber-700",
+  payee: "bg-blue-100 text-blue-700",
+  livree_partiellement: "bg-purple-100 text-purple-700",
+  livree: "bg-green-100 text-green-700",
+  expiree: "bg-red-100 text-red-700",
+};
+const STATUT_LABELS: Record<string, string> = {
+  en_attente: "En attente", reservee: "Réservée", payee: "Payée",
+  livree_partiellement: "Part. livrée", livree: "Livrée", expiree: "Expirée",
+};
+
+function DeviceInfoModal({ order, onClose }: { order: Order; onClose: () => void }) {
+  const { data: info, isLoading } = useGetDeviceInfo(order.id, {
+    query: { enabled: true, queryKey: getGetDeviceInfoQueryKey(order.id) }
+  });
+
+  const DeviceIcon = info?.device_type === "mobile"
+    ? Smartphone
+    : info?.device_type === "tablet"
+    ? Tablet
+    : Monitor;
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Info size={18} className="text-primary shrink-0" />
+            Détails · commande #{order.id}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Bloc 1 — Résumé commande */}
+        <div className="bg-muted/40 rounded-xl p-4">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">🧾 Résumé commande</p>
+          <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+            <div><span className="text-muted-foreground">Acheteur :</span> <span className="font-bold capitalize">{order.nom_commande}</span></div>
+            <div><span className="text-muted-foreground">Montant :</span> <span className="font-bold text-primary">{order.montant_total.toFixed(2)} €</span></div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">Statut :</span>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUT_COLORS[order.statut] || "bg-muted"}`}>{STATUT_LABELS[order.statut] || order.statut}</span>
+            </div>
+            <div><span className="text-muted-foreground">Date :</span> <span>{new Date(order.created_at).toLocaleString("fr-FR")}</span></div>
+            {order.items && order.items.length > 0 && (
+              <div className="col-span-2 text-xs text-muted-foreground">{order.items.map(i => `${i.quantite}× ${i.article_nom}`).join(", ")}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Bloc 2 — Informations appareil */}
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">📱 Informations appareil</p>
+
+          {isLoading && (
+            <div className="text-center py-10 text-muted-foreground text-sm animate-pulse">Chargement des données...</div>
+          )}
+
+          {!isLoading && !info && (
+            <div className="text-center py-10 bg-muted/30 rounded-xl">
+              <Monitor size={36} className="mx-auto mb-2 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground">Aucune donnée disponible pour cette commande.<br /><span className="text-xs">Les commandes créées avant cette mise à jour n'ont pas de données d'appareil.</span></p>
+            </div>
+          )}
+
+          {info && (
+            <div className="space-y-4">
+              {/* Badge appareil */}
+              <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-xl p-3">
+                <DeviceIcon size={30} className="text-primary shrink-0" />
+                <div>
+                  <p className="font-bold capitalize">{info.device_type || "Appareil inconnu"}</p>
+                  <p className="text-sm text-muted-foreground">{[info.os_name, info.os_version].filter(Boolean).join(" ")} · {[info.browser_name, info.browser_version].filter(Boolean).join(" ")}</p>
+                  {info.brand_model && <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-sm">{info.brand_model}</p>}
+                </div>
+              </div>
+
+              {/* Grille de cards */}
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <DevInfoCard icon="🖥️" label="Écran"
+                  value={info.screen_width && info.screen_height ? `${info.screen_width}×${info.screen_height} px` : null}
+                  sub={[info.pixel_ratio ? `×${info.pixel_ratio} DPR` : null, info.screen_orientation].filter(Boolean).join(" · ") || undefined} />
+                <DevInfoCard icon="⚙️" label="CPU / RAM"
+                  value={info.cpu_cores ? `${info.cpu_cores} cœurs` : null}
+                  sub={info.ram_gb ? `${info.ram_gb} Go RAM` : undefined} />
+                <DevInfoCard icon={info.touch_support ? "👆" : "🖱️"} label="Tactile"
+                  value={info.touch_support === true ? "Oui" : info.touch_support === false ? "Non" : null} />
+                <DevInfoCard icon="📶" label="Connexion"
+                  value={info.connection_type?.toUpperCase() ?? null}
+                  sub={[info.connection_speed_mbps != null ? `${info.connection_speed_mbps} Mbps` : null, info.save_data_mode ? "Éco données ✓" : null].filter(Boolean).join(" · ") || undefined} />
+                <DevInfoCard icon="🌍" label="Localisation IP"
+                  value={[info.ip_city, info.ip_country].filter(Boolean).join(", ") || null}
+                  sub={info.ip_isp || undefined} />
+                <DevInfoCard icon="🔌" label="Adresse IP" value={info.ip_address} />
+                <DevInfoCard icon="🕐" label="GDH serveur"
+                  value={info.server_datetime ? new Date(info.server_datetime).toLocaleString("fr-FR") : null} />
+                <DevInfoCard icon="📱" label="GDH appareil"
+                  value={info.client_datetime ? new Date(info.client_datetime).toLocaleString("fr-FR") : null}
+                  sub={info.timezone || undefined} />
+                <DevInfoCard icon="🌐" label="Langue"
+                  value={info.browser_language}
+                  sub={Array.isArray(info.browser_languages) ? info.browser_languages.join(", ") : undefined} />
+                <DevInfoCard icon="🍪" label="Cookies / DNT"
+                  value={[info.cookies_enabled != null ? `Cookies: ${info.cookies_enabled ? "✓" : "✗"}` : null, info.do_not_track != null ? `DNT: ${info.do_not_track ? "✓" : "✗"}` : null].filter(Boolean).join(" · ") || null} />
+                {info.page_url && <DevInfoCard icon="🔗" label="URL de saisie" value={info.page_url} className="col-span-2" />}
+                {info.referrer && <DevInfoCard icon="↩️" label="Referrer" value={info.referrer} className="col-span-2" />}
+              </div>
+
+              {/* Mini-carte OSM */}
+              {info.ip_lat_approx != null && info.ip_lng_approx != null && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">📍 Localisation approximative (via IP)</p>
+                  <div className="rounded-xl overflow-hidden border shadow-sm">
+                    <iframe
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${info.ip_lng_approx - 0.3},${info.ip_lat_approx - 0.3},${info.ip_lng_approx + 0.3},${info.ip_lat_approx + 0.3}&layer=mapnik&marker=${info.ip_lat_approx},${info.ip_lng_approx}`}
+                      width="100%"
+                      height="220"
+                      className="block"
+                      title="Localisation approximative"
+                    />
+                  </div>
+                  {info.ip_city && (
+                    <p className="text-xs text-muted-foreground mt-1.5 text-center">
+                      📍 {[info.ip_city, info.ip_region, info.ip_country].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DevInfoCard({ icon, label, value, sub, className }: {
+  icon: string; label: string;
+  value: string | number | null | undefined;
+  sub?: string; className?: string;
+}) {
+  if (value == null || value === "") return null;
+  return (
+    <div className={`bg-muted/40 rounded-lg p-2.5 space-y-1 ${className ?? ""}`}>
+      <div className="flex items-center gap-1.5 text-muted-foreground">
+        <span className="text-sm">{icon}</span>
+        <span className="font-semibold uppercase tracking-wider text-[10px]">{label}</span>
+      </div>
+      <p className="font-semibold text-foreground break-all text-xs leading-snug">{String(value)}</p>
+      {sub && <p className="text-muted-foreground text-[10px] leading-snug">{sub}</p>}
     </div>
   );
 }

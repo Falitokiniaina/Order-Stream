@@ -24,6 +24,8 @@ import type {
   ArticleInput,
   ArticleUpdate,
   DashboardStats,
+  DeviceInfo,
+  DeviceInfoInput,
   Event,
   EventInput,
   EventUpdate,
@@ -1885,6 +1887,155 @@ export const useDeliverOrderPartial = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeliverOrderPartialMutationOptions(options));
     }
+
+export const getSaveDeviceInfoUrl = (id: number,) => {
+
+
+
+
+  return `/api/orders/${id}/device-info`
+}
+
+/**
+ * @summary Save device information for an order
+ */
+export const saveDeviceInfo = async (id: number,
+    deviceInfoInput: DeviceInfoInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getSaveDeviceInfoUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      deviceInfoInput,)
+  }
+);}
+
+
+
+
+export const getSaveDeviceInfoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveDeviceInfo>>, TError,{id: number;data: BodyType<DeviceInfoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveDeviceInfo>>, TError,{id: number;data: BodyType<DeviceInfoInput>}, TContext> => {
+
+const mutationKey = ['saveDeviceInfo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveDeviceInfo>>, {id: number;data: BodyType<DeviceInfoInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  saveDeviceInfo(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveDeviceInfoMutationResult = NonNullable<Awaited<ReturnType<typeof saveDeviceInfo>>>
+    export type SaveDeviceInfoMutationBody = BodyType<DeviceInfoInput>
+    export type SaveDeviceInfoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save device information for an order
+ */
+export const useSaveDeviceInfo = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveDeviceInfo>>, TError,{id: number;data: BodyType<DeviceInfoInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveDeviceInfo>>,
+        TError,
+        {id: number;data: BodyType<DeviceInfoInput>},
+        TContext
+      > => {
+      return useMutation(getSaveDeviceInfoMutationOptions(options));
+    }
+
+export const getGetDeviceInfoUrl = (id: number,) => {
+
+
+
+
+  return `/api/orders/${id}/device-info`
+}
+
+/**
+ * @summary Get device information for an order
+ */
+export const getDeviceInfo = async (id: number, options?: RequestInit): Promise<DeviceInfo> => {
+
+  return customFetch<DeviceInfo>(getGetDeviceInfoUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDeviceInfoQueryKey = (id: number,) => {
+    return [
+    `/api/orders/${id}/device-info`
+    ] as const;
+    }
+
+
+export const getGetDeviceInfoQueryOptions = <TData = Awaited<ReturnType<typeof getDeviceInfo>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDeviceInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDeviceInfoQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDeviceInfo>>> = ({ signal }) => getDeviceInfo(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDeviceInfo>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDeviceInfoQueryResult = NonNullable<Awaited<ReturnType<typeof getDeviceInfo>>>
+export type GetDeviceInfoQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get device information for an order
+ */
+
+export function useGetDeviceInfo<TData = Awaited<ReturnType<typeof getDeviceInfo>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDeviceInfo>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDeviceInfoQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetSettingsUrl = (eventId: number,) => {
 

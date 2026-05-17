@@ -21,6 +21,8 @@ tags:
     description: Event settings
   - name: dashboard
     description: Dashboard and stats
+  - name: device-info
+    description: Device information collection
 
 paths:
   /healthz:
@@ -525,6 +527,46 @@ paths:
               schema:
                 $ref: "#/components/schemas/Order"
 
+  /orders/{id}/device-info:
+    post:
+      operationId: saveDeviceInfo
+      tags: [device-info]
+      summary: Save device information for an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceInfoInput"
+      responses:
+        "200":
+          description: Saved
+    get:
+      operationId: getDeviceInfo
+      tags: [device-info]
+      summary: Get device information for an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Device info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceInfo"
+        "404":
+          description: Not found
+
   /events/{eventId}/settings:
     get:
       operationId: getSettings
@@ -929,3 +971,137 @@ components:
           type: integer
         articles_a_preparer:
           type: integer
+
+    DeviceInfoInput:
+      type: object
+      properties:
+        device_type:
+          type: string
+        os_name:
+          type: string
+        os_version:
+          type: string
+        brand_model:
+          type: string
+        browser_name:
+          type: string
+        browser_version:
+          type: string
+        screen_width:
+          type: integer
+        screen_height:
+          type: integer
+        pixel_ratio:
+          type: number
+        screen_orientation:
+          type: string
+        cpu_cores:
+          type: integer
+        ram_gb:
+          type: number
+        touch_support:
+          type: boolean
+        connection_type:
+          type: string
+        connection_speed_mbps:
+          type: number
+        save_data_mode:
+          type: boolean
+        timezone:
+          type: string
+        browser_language:
+          type: string
+        browser_languages:
+          type: array
+          items:
+            type: string
+        session_id:
+          type: string
+        page_url:
+          type: string
+        referrer:
+          type: string
+        cookies_enabled:
+          type: boolean
+        do_not_track:
+          type: boolean
+        client_datetime:
+          type: string
+
+    DeviceInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_id:
+          type: integer
+        device_type:
+          type: ["string", "null"]
+        os_name:
+          type: ["string", "null"]
+        os_version:
+          type: ["string", "null"]
+        brand_model:
+          type: ["string", "null"]
+        browser_name:
+          type: ["string", "null"]
+        browser_version:
+          type: ["string", "null"]
+        screen_width:
+          type: ["integer", "null"]
+        screen_height:
+          type: ["integer", "null"]
+        pixel_ratio:
+          type: ["number", "null"]
+        screen_orientation:
+          type: ["string", "null"]
+        cpu_cores:
+          type: ["integer", "null"]
+        ram_gb:
+          type: ["number", "null"]
+        touch_support:
+          type: ["boolean", "null"]
+        connection_type:
+          type: ["string", "null"]
+        connection_speed_mbps:
+          type: ["number", "null"]
+        save_data_mode:
+          type: ["boolean", "null"]
+        ip_address:
+          type: ["string", "null"]
+        ip_country:
+          type: ["string", "null"]
+        ip_region:
+          type: ["string", "null"]
+        ip_city:
+          type: ["string", "null"]
+        ip_isp:
+          type: ["string", "null"]
+        ip_lat_approx:
+          type: ["number", "null"]
+        ip_lng_approx:
+          type: ["number", "null"]
+        timezone:
+          type: ["string", "null"]
+        browser_language:
+          type: ["string", "null"]
+        browser_languages:
+          type: ["array", "null"]
+          items:
+            type: string
+        session_id:
+          type: ["string", "null"]
+        page_url:
+          type: ["string", "null"]
+        referrer:
+          type: ["string", "null"]
+        cookies_enabled:
+          type: ["boolean", "null"]
+        do_not_track:
+          type: ["boolean", "null"]
+        client_datetime:
+          type: ["string", "null"]
+        server_datetime:
+          type: ["string", "null"]
+        created_at:
+          type: string

@@ -551,6 +551,89 @@ export const DeliverOrderPartialResponse = zod.object({
 
 
 /**
+ * @summary Save device information for an order
+ */
+export const SaveDeviceInfoParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const SaveDeviceInfoBody = zod.object({
+  "device_type": zod.string().optional(),
+  "os_name": zod.string().optional(),
+  "os_version": zod.string().optional(),
+  "brand_model": zod.string().optional(),
+  "browser_name": zod.string().optional(),
+  "browser_version": zod.string().optional(),
+  "screen_width": zod.number().optional(),
+  "screen_height": zod.number().optional(),
+  "pixel_ratio": zod.number().optional(),
+  "screen_orientation": zod.string().optional(),
+  "cpu_cores": zod.number().optional(),
+  "ram_gb": zod.number().optional(),
+  "touch_support": zod.boolean().optional(),
+  "connection_type": zod.string().optional(),
+  "connection_speed_mbps": zod.number().optional(),
+  "save_data_mode": zod.boolean().optional(),
+  "timezone": zod.string().optional(),
+  "browser_language": zod.string().optional(),
+  "browser_languages": zod.array(zod.string()).optional(),
+  "session_id": zod.string().optional(),
+  "page_url": zod.string().optional(),
+  "referrer": zod.string().optional(),
+  "cookies_enabled": zod.boolean().optional(),
+  "do_not_track": zod.boolean().optional(),
+  "client_datetime": zod.string().optional()
+})
+
+
+/**
+ * @summary Get device information for an order
+ */
+export const GetDeviceInfoParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetDeviceInfoResponse = zod.object({
+  "id": zod.number().optional(),
+  "order_id": zod.number().optional(),
+  "device_type": zod.string().nullish(),
+  "os_name": zod.string().nullish(),
+  "os_version": zod.string().nullish(),
+  "brand_model": zod.string().nullish(),
+  "browser_name": zod.string().nullish(),
+  "browser_version": zod.string().nullish(),
+  "screen_width": zod.number().nullish(),
+  "screen_height": zod.number().nullish(),
+  "pixel_ratio": zod.number().nullish(),
+  "screen_orientation": zod.string().nullish(),
+  "cpu_cores": zod.number().nullish(),
+  "ram_gb": zod.number().nullish(),
+  "touch_support": zod.boolean().nullish(),
+  "connection_type": zod.string().nullish(),
+  "connection_speed_mbps": zod.number().nullish(),
+  "save_data_mode": zod.boolean().nullish(),
+  "ip_address": zod.string().nullish(),
+  "ip_country": zod.string().nullish(),
+  "ip_region": zod.string().nullish(),
+  "ip_city": zod.string().nullish(),
+  "ip_isp": zod.string().nullish(),
+  "ip_lat_approx": zod.number().nullish(),
+  "ip_lng_approx": zod.number().nullish(),
+  "timezone": zod.string().nullish(),
+  "browser_language": zod.string().nullish(),
+  "browser_languages": zod.array(zod.string()).nullish(),
+  "session_id": zod.string().nullish(),
+  "page_url": zod.string().nullish(),
+  "referrer": zod.string().nullish(),
+  "cookies_enabled": zod.boolean().nullish(),
+  "do_not_track": zod.boolean().nullish(),
+  "client_datetime": zod.string().nullish(),
+  "server_datetime": zod.string().nullish(),
+  "created_at": zod.string().optional()
+})
+
+
+/**
  * @summary Get event settings
  */
 export const GetSettingsParams = zod.object({

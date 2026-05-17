@@ -10,6 +10,8 @@ export * from './article';
 export * from './articleInput';
 export * from './articleUpdate';
 export * from './dashboardStats';
+export * from './deviceInfo';
+export * from './deviceInfoInput';
 export * from './event';
 export * from './eventInput';
 export * from './eventUpdate';
