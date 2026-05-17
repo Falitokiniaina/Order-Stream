@@ -1,5 +1,5 @@
 import { useRoute } from "wouter";
-import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, useDeliverOrder, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
+import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
 import { LoginInputRole } from "@workspace/api-client-react";
@@ -42,7 +42,6 @@ function PreparateurContent({ slug }: { slug: string }) {
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const deliverOrder = useDeliverOrder();
   const deliverPartial = useDeliverOrderPartial();
 
   const allToPrepare = useMemo(() => {
@@ -79,18 +78,6 @@ function PreparateurContent({ slug }: { slug: string }) {
     }
     return h.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 50);
   }, [orders, searchHistory]);
-
-  const handleDeliverFull = async (orderId: number) => {
-    if (!event) return;
-    try {
-      await deliverOrder.mutateAsync({ id: orderId });
-      queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey(event.id) });
-      queryClient.invalidateQueries({ queryKey: getGetOrdersSummaryQueryKey(event.id) });
-      toast({ title: "Commande livrée !" });
-    } catch (e) {
-      toast({ title: "Erreur", variant: "destructive" });
-    }
-  };
 
   const openPartialDelivery = (orderId: number) => {
     const order = orders?.find(o => o.id === orderId);
@@ -212,7 +199,7 @@ function PreparateurContent({ slug }: { slug: string }) {
                       <Button variant="outline" className="font-bold border-2" onClick={() => openPartialDelivery(order.id)}>
                         <Package size={16} className="mr-2" /> Partiel
                       </Button>
-                      <Button className="font-bold shadow-md hover:scale-105 transition-transform" onClick={() => handleDeliverFull(order.id)}>
+                      <Button className="font-bold shadow-md hover:scale-105 transition-transform" onClick={() => openPartialDelivery(order.id)}>
                         <Check size={16} className="mr-2" /> Tout Livrer
                       </Button>
                     </div>
