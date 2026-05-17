@@ -7,6 +7,7 @@ import ordersRouter from "./orders";
 import settingsRouter from "./settings";
 import dashboardRouter from "./dashboard";
 import deviceInfoRouter from "./device-info";
+import snapshotsRouter from "./snapshots";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(ordersRouter);
 router.use(settingsRouter);
 router.use(dashboardRouter);
 router.use(deviceInfoRouter);
+router.use(snapshotsRouter);
 
 export default router;

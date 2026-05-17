@@ -23,6 +23,7 @@ import type {
   Article,
   ArticleInput,
   ArticleUpdate,
+  CreateSnapshotInput,
   DashboardStats,
   DeviceInfo,
   DeviceInfoInput,
@@ -39,7 +40,8 @@ import type {
   PaymentInput,
   SessionInfo,
   Settings,
-  SettingsUpdate
+  SettingsUpdate,
+  Snapshot
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -2036,6 +2038,299 @@ export function useGetDeviceInfo<TData = Awaited<ReturnType<typeof getDeviceInfo
 
 
 
+
+export const getListSnapshotsUrl = (eventId: number,) => {
+
+
+
+
+  return `/api/events/${eventId}/snapshots`
+}
+
+/**
+ * @summary List all snapshots for an event
+ */
+export const listSnapshots = async (eventId: number, options?: RequestInit): Promise<Snapshot[]> => {
+
+  return customFetch<Snapshot[]>(getListSnapshotsUrl(eventId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSnapshotsQueryKey = (eventId: number,) => {
+    return [
+    `/api/events/${eventId}/snapshots`
+    ] as const;
+    }
+
+
+export const getListSnapshotsQueryOptions = <TData = Awaited<ReturnType<typeof listSnapshots>>, TError = ErrorType<unknown>>(eventId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSnapshots>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSnapshotsQueryKey(eventId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSnapshots>>> = ({ signal }) => listSnapshots(eventId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(eventId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSnapshots>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListSnapshotsQueryResult = NonNullable<Awaited<ReturnType<typeof listSnapshots>>>
+export type ListSnapshotsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all snapshots for an event
+ */
+
+export function useListSnapshots<TData = Awaited<ReturnType<typeof listSnapshots>>, TError = ErrorType<unknown>>(
+ eventId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSnapshots>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListSnapshotsQueryOptions(eventId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateSnapshotUrl = (eventId: number,) => {
+
+
+
+
+  return `/api/events/${eventId}/snapshots`
+}
+
+/**
+ * @summary Create a new snapshot of the event state
+ */
+export const createSnapshot = async (eventId: number,
+    createSnapshotInput: CreateSnapshotInput, options?: RequestInit): Promise<Snapshot> => {
+
+  return customFetch<Snapshot>(getCreateSnapshotUrl(eventId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      createSnapshotInput,)
+  }
+);}
+
+
+
+
+export const getCreateSnapshotMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSnapshot>>, TError,{eventId: number;data: BodyType<CreateSnapshotInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSnapshot>>, TError,{eventId: number;data: BodyType<CreateSnapshotInput>}, TContext> => {
+
+const mutationKey = ['createSnapshot'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSnapshot>>, {eventId: number;data: BodyType<CreateSnapshotInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  createSnapshot(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSnapshotMutationResult = NonNullable<Awaited<ReturnType<typeof createSnapshot>>>
+    export type CreateSnapshotMutationBody = BodyType<CreateSnapshotInput>
+    export type CreateSnapshotMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a new snapshot of the event state
+ */
+export const useCreateSnapshot = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSnapshot>>, TError,{eventId: number;data: BodyType<CreateSnapshotInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createSnapshot>>,
+        TError,
+        {eventId: number;data: BodyType<CreateSnapshotInput>},
+        TContext
+      > => {
+      return useMutation(getCreateSnapshotMutationOptions(options));
+    }
+
+export const getDeleteSnapshotUrl = (eventId: number,
+    snapId: number,) => {
+
+
+
+
+  return `/api/events/${eventId}/snapshots/${snapId}`
+}
+
+/**
+ * @summary Delete a snapshot
+ */
+export const deleteSnapshot = async (eventId: number,
+    snapId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteSnapshotUrl(eventId,snapId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteSnapshotMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSnapshot>>, TError,{eventId: number;snapId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSnapshot>>, TError,{eventId: number;snapId: number}, TContext> => {
+
+const mutationKey = ['deleteSnapshot'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSnapshot>>, {eventId: number;snapId: number}> = (props) => {
+          const {eventId,snapId} = props ?? {};
+
+          return  deleteSnapshot(eventId,snapId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSnapshotMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSnapshot>>>
+
+    export type DeleteSnapshotMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a snapshot
+ */
+export const useDeleteSnapshot = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSnapshot>>, TError,{eventId: number;snapId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSnapshot>>,
+        TError,
+        {eventId: number;snapId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteSnapshotMutationOptions(options));
+    }
+
+export const getRestoreSnapshotUrl = (eventId: number,
+    snapId: number,) => {
+
+
+
+
+  return `/api/events/${eventId}/snapshots/${snapId}/restore`
+}
+
+/**
+ * @summary Restore event state from a snapshot
+ */
+export const restoreSnapshot = async (eventId: number,
+    snapId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRestoreSnapshotUrl(eventId,snapId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRestoreSnapshotMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreSnapshot>>, TError,{eventId: number;snapId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreSnapshot>>, TError,{eventId: number;snapId: number}, TContext> => {
+
+const mutationKey = ['restoreSnapshot'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreSnapshot>>, {eventId: number;snapId: number}> = (props) => {
+          const {eventId,snapId} = props ?? {};
+
+          return  restoreSnapshot(eventId,snapId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreSnapshotMutationResult = NonNullable<Awaited<ReturnType<typeof restoreSnapshot>>>
+
+    export type RestoreSnapshotMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Restore event state from a snapshot
+ */
+export const useRestoreSnapshot = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreSnapshot>>, TError,{eventId: number;snapId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreSnapshot>>,
+        TError,
+        {eventId: number;snapId: number},
+        TContext
+      > => {
+      return useMutation(getRestoreSnapshotMutationOptions(options));
+    }
 
 export const getGetSettingsUrl = (eventId: number,) => {
 

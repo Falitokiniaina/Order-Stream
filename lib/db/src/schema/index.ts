@@ -4,3 +4,4 @@ export * from "./articles";
 export * from "./commandes";
 export * from "./sessions";
 export * from "./device_info";
+export * from "./event_snapshots";

@@ -310,3 +310,16 @@ export interface DeviceInfo {
   created_at?: string;
 }
 
+export interface Snapshot {
+  id: number;
+  event_id: number;
+  label: string;
+  created_at: string;
+  article_count: number;
+  commande_count: number;
+}
+
+export interface CreateSnapshotInput {
+  label: string;
+}
+

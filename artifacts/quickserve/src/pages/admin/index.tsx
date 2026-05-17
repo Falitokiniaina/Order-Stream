@@ -10,7 +10,9 @@ import {
   useCreateArticle, useUpdateArticle, useDeleteArticle,
   useListOrders, getListOrdersQueryKey,
   useGetDeviceInfo, getGetDeviceInfoQueryKey,
-  type Order, type DeviceInfo
+  useListSnapshots, getListSnapshotsQueryKey,
+  useCreateSnapshot, useDeleteSnapshot, useRestoreSnapshot,
+  type Order, type DeviceInfo, type Snapshot
 } from "@workspace/api-client-react";
 import { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +26,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw, Monitor, Smartphone, Tablet, X } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw, Monitor, Smartphone, Tablet, X, Archive, RotateCcw, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -105,7 +107,7 @@ function AdminContent() {
       <main className="flex-1 p-4 max-w-6xl mx-auto w-full">
         {selectedEventId ? (
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="mb-6 grid grid-cols-4 h-14 bg-muted/50 p-1">
+            <TabsList className="mb-6 grid grid-cols-5 h-14 bg-muted/50 p-1">
               <TabsTrigger value="dashboard" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <BarChart3 size={16} className="mr-1.5" /> Tableau de bord
               </TabsTrigger>
@@ -118,12 +120,16 @@ function AdminContent() {
               <TabsTrigger value="config" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
                 <Settings size={16} className="mr-1.5" /> Configuration
               </TabsTrigger>
+              <TabsTrigger value="sauvegardes" className="text-sm h-full data-[state=active]:bg-card data-[state=active]:shadow-sm">
+                <Archive size={16} className="mr-1.5" /> Sauvegardes
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard"><DashboardTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="commandes"><CommandesTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="stock"><StockTab eventId={selectedEventId} /></TabsContent>
             <TabsContent value="config"><ConfigTab eventId={selectedEventId} /></TabsContent>
+            <TabsContent value="sauvegardes"><SnapshotsTab eventId={selectedEventId} /></TabsContent>
           </Tabs>
         ) : (
           <div className="text-center py-20 text-muted-foreground">
@@ -751,6 +757,231 @@ function ConfigTab({ eventId }: { eventId: number }) {
           Enregistrer la configuration
         </Button>
       </div>
+    </div>
+  );
+}
+
+// ── SnapshotsTab ─────────────────────────────────────────────────────────────
+function SnapshotsTab({ eventId }: { eventId: number }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: snapshots, isLoading } = useListSnapshots(eventId, {
+    query: { queryKey: getListSnapshotsQueryKey(eventId) }
+  });
+  const createSnapshot = useCreateSnapshot();
+  const deleteSnapshot = useDeleteSnapshot();
+  const restoreSnapshot = useRestoreSnapshot();
+
+  const [newLabel, setNewLabel] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [confirmRestore, setConfirmRestore] = useState<Snapshot | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Snapshot | null>(null);
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: getListSnapshotsQueryKey(eventId) });
+
+  const handleCreate = async () => {
+    if (!newLabel.trim()) return;
+    try {
+      await createSnapshot.mutateAsync({ eventId, data: { label: newLabel.trim() } });
+      invalidate();
+      setShowCreateModal(false);
+      setNewLabel("");
+      toast({ title: "Sauvegarde créée", description: `"${newLabel.trim()}" enregistrée.` });
+    } catch {
+      toast({ title: "Erreur", description: "Impossible de créer la sauvegarde.", variant: "destructive" });
+    }
+  };
+
+  const handleRestore = async (snap: Snapshot) => {
+    try {
+      await restoreSnapshot.mutateAsync({ eventId, snapId: snap.id });
+      // Invalidate all relevant queries after restore
+      queryClient.invalidateQueries();
+      setConfirmRestore(null);
+      toast({ title: "Restauration réussie", description: `État restauré depuis "${snap.label}".` });
+    } catch {
+      toast({ title: "Erreur lors de la restauration", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (snap: Snapshot) => {
+    try {
+      await deleteSnapshot.mutateAsync({ eventId, snapId: snap.id });
+      invalidate();
+      setConfirmDelete(null);
+      toast({ title: "Sauvegarde supprimée" });
+    } catch {
+      toast({ title: "Erreur lors de la suppression", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Archive size={20} className="text-primary" /> Points de restauration
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Sauvegardez l'état complet de l'événement (articles, stocks, commandes, configuration) et restaurez-le à tout moment.
+          </p>
+        </div>
+        <Button onClick={() => setShowCreateModal(true)} className="shrink-0">
+          <Plus size={16} className="mr-2" /> Nouvelle sauvegarde
+        </Button>
+      </div>
+
+      {/* Liste des sauvegardes */}
+      {isLoading && (
+        <div className="text-center py-16 text-muted-foreground animate-pulse text-sm">Chargement...</div>
+      )}
+
+      {!isLoading && (!snapshots || snapshots.length === 0) && (
+        <div className="text-center py-20 border-2 border-dashed rounded-2xl">
+          <Archive size={48} className="mx-auto mb-4 text-muted-foreground/30" />
+          <p className="font-medium text-muted-foreground">Aucune sauvegarde pour cet événement</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">Créez votre première sauvegarde une fois la configuration prête.</p>
+          <Button variant="outline" onClick={() => setShowCreateModal(true)}>
+            <Plus size={16} className="mr-2" /> Créer une sauvegarde
+          </Button>
+        </div>
+      )}
+
+      {snapshots && snapshots.length > 0 && (
+        <div className="space-y-3">
+          {[...snapshots].reverse().map(snap => (
+            <div key={snap.id} className="bg-card border rounded-2xl p-4 flex items-center gap-4 hover:border-primary/30 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <Archive size={18} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold truncate">{snap.label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(snap.created_at).toLocaleString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  &nbsp;·&nbsp;{snap.article_count} article{snap.article_count !== 1 ? "s" : ""}
+                  &nbsp;·&nbsp;{snap.commande_count} commande{snap.commande_count !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setConfirmRestore(snap)}>
+                        <RotateCcw size={14} className="mr-1.5" /> Restaurer
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Remplace toutes les données actuelles par celles de cette sauvegarde</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setConfirmDelete(snap)}>
+                        <Trash2 size={15} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Supprimer cette sauvegarde</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal — Nouvelle sauvegarde */}
+      <Dialog open={showCreateModal} onOpenChange={v => { setShowCreateModal(v); if (!v) setNewLabel(""); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Archive size={18} className="text-primary" /> Nouvelle sauvegarde
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Capture l'état complet de cet événement : articles, stocks, commandes, device info et configuration.
+            </p>
+            <div className="space-y-1.5">
+              <Label>Libellé</Label>
+              <Input
+                placeholder="Ex : Configuration initiale, Avant ouverture…"
+                value={newLabel}
+                onChange={e => setNewLabel(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleCreate()}
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setShowCreateModal(false); setNewLabel(""); }}>Annuler</Button>
+            <Button onClick={handleCreate} disabled={!newLabel.trim() || createSnapshot.isPending}>
+              {createSnapshot.isPending ? "Sauvegarde…" : "Sauvegarder"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal — Confirmation restauration */}
+      {confirmRestore && (
+        <Dialog open onOpenChange={v => !v && setConfirmRestore(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <AlertTriangle size={18} /> Confirmer la restauration
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-2 space-y-3">
+              <p className="text-sm">
+                Vous allez restaurer la sauvegarde <span className="font-bold">"{confirmRestore.label}"</span> datée du{" "}
+                <span className="font-semibold">{new Date(confirmRestore.created_at).toLocaleString("fr-FR")}</span>.
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                <strong>Attention :</strong> toutes les données actuelles de l'événement (articles, commandes, configuration) seront <strong>remplacées</strong> par celles de cette sauvegarde. Cette action est irréversible.
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Conseil : si vous souhaitez conserver l'état actuel, créez d'abord une sauvegarde avant de restaurer.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmRestore(null)}>Annuler</Button>
+              <Button
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+                onClick={() => handleRestore(confirmRestore)}
+                disabled={restoreSnapshot.isPending}
+              >
+                <RotateCcw size={14} className="mr-1.5" />
+                {restoreSnapshot.isPending ? "Restauration…" : "Oui, restaurer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal — Confirmation suppression */}
+      {confirmDelete && (
+        <Dialog open onOpenChange={v => !v && setConfirmDelete(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 size={18} /> Supprimer la sauvegarde
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-2">
+              <p className="text-sm">
+                Supprimer définitivement <span className="font-bold">"{confirmDelete.label}"</span> ?
+                Cette action ne peut pas être annulée.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmDelete(null)}>Annuler</Button>
+              <Button variant="destructive" onClick={() => handleDelete(confirmDelete)} disabled={deleteSnapshot.isPending}>
+                {deleteSnapshot.isPending ? "Suppression…" : "Supprimer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

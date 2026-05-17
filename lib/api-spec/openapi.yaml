@@ -23,6 +23,8 @@ tags:
     description: Dashboard and stats
   - name: device-info
     description: Device information collection
+  - name: snapshots
+    description: Event database snapshots and restore points
 
 paths:
   /healthz:
@@ -567,6 +569,90 @@ paths:
         "404":
           description: Not found
 
+  /events/{eventId}/snapshots:
+    get:
+      operationId: listSnapshots
+      tags: [snapshots]
+      summary: List all snapshots for an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of snapshots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+    post:
+      operationId: createSnapshot
+      tags: [snapshots]
+      summary: Create a new snapshot of the event state
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSnapshotInput"
+      responses:
+        "201":
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+
+  /events/{eventId}/snapshots/{snapId}:
+    delete:
+      operationId: deleteSnapshot
+      tags: [snapshots]
+      summary: Delete a snapshot
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: snapId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /events/{eventId}/snapshots/{snapId}/restore:
+    post:
+      operationId: restoreSnapshot
+      tags: [snapshots]
+      summary: Restore event state from a snapshot
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: snapId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored successfully
+
   /events/{eventId}/settings:
     get:
       operationId: getSettings
@@ -1104,4 +1190,28 @@ components:
         server_datetime:
           type: ["string", "null"]
         created_at:
+          type: string
+
+    Snapshot:
+      type: object
+      required: [id, event_id, label, created_at, article_count, commande_count]
+      properties:
+        id:
+          type: integer
+        event_id:
+          type: integer
+        label:
+          type: string
+        created_at:
+          type: string
+        article_count:
+          type: integer
+        commande_count:
+          type: integer
+
+    CreateSnapshotInput:
+      type: object
+      required: [label]
+      properties:
+        label:
           type: string

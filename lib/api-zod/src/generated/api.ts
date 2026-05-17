@@ -634,6 +634,54 @@ export const GetDeviceInfoResponse = zod.object({
 
 
 /**
+ * @summary List all snapshots for an event
+ */
+export const ListSnapshotsParams = zod.object({
+  "eventId": zod.coerce.number()
+})
+
+export const ListSnapshotsResponseItem = zod.object({
+  "id": zod.number(),
+  "event_id": zod.number(),
+  "label": zod.string(),
+  "created_at": zod.string(),
+  "article_count": zod.number(),
+  "commande_count": zod.number()
+})
+export const ListSnapshotsResponse = zod.array(ListSnapshotsResponseItem)
+
+
+/**
+ * @summary Create a new snapshot of the event state
+ */
+export const CreateSnapshotParams = zod.object({
+  "eventId": zod.coerce.number()
+})
+
+export const CreateSnapshotBody = zod.object({
+  "label": zod.string()
+})
+
+
+/**
+ * @summary Delete a snapshot
+ */
+export const DeleteSnapshotParams = zod.object({
+  "eventId": zod.coerce.number(),
+  "snapId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Restore event state from a snapshot
+ */
+export const RestoreSnapshotParams = zod.object({
+  "eventId": zod.coerce.number(),
+  "snapId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get event settings
  */
 export const GetSettingsParams = zod.object({

@@ -9,6 +9,7 @@
 export * from './article';
 export * from './articleInput';
 export * from './articleUpdate';
+export * from './createSnapshotInput';
 export * from './dashboardStats';
 export * from './deviceInfo';
 export * from './deviceInfoInput';
@@ -31,4 +32,5 @@ export * from './paymentInput';
 export * from './sessionInfo';
 export * from './settings';
 export * from './settingsUpdate';
+export * from './snapshot';
 export * from './topArticle';
