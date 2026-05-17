@@ -74,32 +74,30 @@ export default function BuyerPage() {
     setNameCheckLoading(true);
     try {
       const existing = await getOrderByName(event.id, orderName.trim());
-
-      if (existing.statut === "en_attente") {
-        // Resume silently: load existing cart and continue
-        const cartItems: Record<number, number> = {};
-        existing.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
-        setEditingOrderId(existing.id);
-        setCart(cartItems);
-        setStep("catalog");
-      } else {
-        setExistingOrderConflict(existing);
-        setShowConflictDialog(true);
-      }
+      setExistingOrderConflict(existing);
+      setShowConflictDialog(true);
     } catch {
-      // No existing order → create it immediately in en_attente
-      try {
-        const newOrder = await createOrder.mutateAsync({
-          eventId: event.id,
-          data: { nom_commande: orderName.trim(), items: [] }
-        });
-        setEditingOrderId(newOrder.id);
-      } catch {
-        // If creation fails, still allow browsing (will create on reserve)
-      }
+      // 404 = name is free, proceed to catalog
       setStep("catalog");
     } finally {
       setNameCheckLoading(false);
+    }
+  };
+
+  const createOrderForCart = async (cartItems: Record<number, number>) => {
+    if (!event) return;
+    try {
+      const items = Object.entries(cartItems).map(([id, qty]) => ({ article_id: Number(id), quantite: qty }));
+      const order = await createOrder.mutateAsync({ eventId: event.id, data: { nom_commande: orderName.trim(), items } });
+      setEditingOrderId(order.id);
+    } catch (e: any) {
+      if (e?.response?.status === 409) {
+        toast({ variant: "destructive", title: "Nom déjà pris", description: "Ce nom vient d'être utilisé par quelqu'un d'autre. Choisissez un autre nom." });
+        setCart({});
+        setStep("name");
+      } else {
+        toast({ variant: "destructive", title: "Erreur", description: "Impossible d'enregistrer la commande. Réessayez." });
+      }
     }
   };
 
@@ -123,14 +121,21 @@ export default function BuyerPage() {
   };
 
   const updateQuantity = (articleId: number, delta: number, max: number) => {
-    setCart(prev => {
-      const current = prev[articleId] || 0;
-      const next = Math.max(0, Math.min(max, current + delta));
-      const newCart = { ...prev };
-      if (next === 0) delete newCart[articleId];
-      else newCart[articleId] = next;
-      return newCart;
-    });
+    const current = cart[articleId] || 0;
+    const next = Math.max(0, Math.min(max, current + delta));
+    const newCart = { ...cart };
+    if (next === 0) delete newCart[articleId];
+    else newCart[articleId] = next;
+
+    const wasEmpty = Object.keys(cart).length === 0;
+    const isNowNonEmpty = Object.keys(newCart).length > 0;
+
+    setCart(newCart);
+
+    // Create order in DB on first item add (when no order exists yet)
+    if (wasEmpty && isNowNonEmpty && !editingOrderId) {
+      createOrderForCart(newCart);
+    }
   };
 
   const totalItems = Object.values(cart).reduce((a, b) => a + b, 0);
