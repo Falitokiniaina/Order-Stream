@@ -1,24 +1,29 @@
 import { Router } from "express";
-import { db, parametrageTable, evenementsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, parametrageTable, evenementsTable, sessionsTable } from "@workspace/db";
+import { eq, lt } from "drizzle-orm";
 
 const router = Router();
 
-// Simple in-memory session store (production would use redis/DB)
-const sessions = new Map<string, { role: string; eventSlug: string | null; expiresAt: number }>();
-
 function generateToken(): string {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
-export function getSession(token: string) {
-  const session = sessions.get(token);
+export async function getSession(token: string) {
+  const [session] = await db
+    .select()
+    .from(sessionsTable)
+    .where(eq(sessionsTable.token, token))
+    .limit(1);
   if (!session) return null;
-  if (session.expiresAt < Date.now()) {
-    sessions.delete(token);
+  if (session.expires_at < new Date()) {
+    await db.delete(sessionsTable).where(eq(sessionsTable.token, token));
     return null;
   }
-  return session;
+  return { role: session.role, eventSlug: session.event_slug };
+}
+
+async function purgeExpiredSessions() {
+  await db.delete(sessionsTable).where(lt(sessionsTable.expires_at, new Date()));
 }
 
 router.post("/auth/login", async (req, res) => {
@@ -32,7 +37,6 @@ router.post("/auth/login", async (req, res) => {
     let valid = false;
 
     if (role === "admin") {
-      // Admin can log in without event slug — check any parametrage or hardcoded
       if (eventSlug) {
         const event = await db.select().from(evenementsTable).where(eq(evenementsTable.slug_url, eventSlug)).limit(1);
         if (event.length > 0) {
@@ -40,7 +44,6 @@ router.post("/auth/login", async (req, res) => {
           if (params.length > 0 && params[0].mdp_admin === password) valid = true;
         }
       }
-      // Fall back: check if any parametrage has this admin password
       if (!valid) {
         const allParams = await db.select().from(parametrageTable);
         valid = allParams.some(p => p.mdp_admin === password);
@@ -64,8 +67,17 @@ router.post("/auth/login", async (req, res) => {
     }
 
     const token = generateToken();
-    const eightHours = 8 * 60 * 60 * 1000;
-    sessions.set(token, { role, eventSlug: eventSlug ?? null, expiresAt: Date.now() + eightHours });
+    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000);
+
+    await db.insert(sessionsTable).values({
+      token,
+      role,
+      event_slug: eventSlug ?? null,
+      expires_at: expiresAt,
+    });
+
+    // Purge expired sessions in background (fire-and-forget)
+    purgeExpiredSessions().catch(() => {});
 
     res.json({ success: true, role, eventSlug: eventSlug ?? null, token });
   } catch (err) {
@@ -74,16 +86,18 @@ router.post("/auth/login", async (req, res) => {
   }
 });
 
-router.post("/auth/logout", (req, res) => {
+router.post("/auth/logout", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
-  if (token) sessions.delete(token);
+  if (token) {
+    await db.delete(sessionsTable).where(eq(sessionsTable.token, token)).catch(() => {});
+  }
   res.json({ success: true });
 });
 
-router.get("/auth/session", (req, res) => {
+router.get("/auth/session", async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token) return res.json({ authenticated: false, role: null, eventSlug: null });
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return res.json({ authenticated: false, role: null, eventSlug: null });
   res.json({ authenticated: true, role: session.role, eventSlug: session.eventSlug });
 });

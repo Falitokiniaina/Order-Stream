@@ -52,7 +52,14 @@ export default function BuyerPage() {
     query: {
       enabled: !!event?.id && !!orderName && step === "status",
       queryKey: getGetOrderByNameQueryKey(event?.id || 0, orderName),
-      refetchInterval: 8000
+      refetchInterval: (query) => {
+        const s = (query.state.data as typeof liveOrder)?.statut;
+        if (s === "livree" || s === "expiree") return false;
+        if (s === "reservee") return 5000;
+        if (s === "payee") return 10000;
+        if (s === "livree_partiellement") return 12000;
+        return 8000;
+      }
     }
   });
 
