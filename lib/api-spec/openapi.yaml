@@ -836,7 +836,7 @@ components:
 
     Settings:
       type: object
-      required: [id, evenement_id, temps_reservation_minutes, vente_ouverte, updated_at]
+      required: [id, evenement_id, temps_reservation_minutes, vente_ouverte, allow_reprendre_commande, updated_at]
       properties:
         id:
           type: integer
@@ -845,6 +845,8 @@ components:
         temps_reservation_minutes:
           type: integer
         vente_ouverte:
+          type: boolean
+        allow_reprendre_commande:
           type: boolean
         updated_at:
           type: string
@@ -861,6 +863,8 @@ components:
         mdp_admin:
           type: string
         vente_ouverte:
+          type: boolean
+        allow_reprendre_commande:
           type: boolean
 
     TopArticle:

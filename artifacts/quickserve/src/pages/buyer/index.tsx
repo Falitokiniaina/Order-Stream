@@ -125,9 +125,12 @@ export default function BuyerPage() {
       queryClient.invalidateQueries({ queryKey: getGetOrderByNameQueryKey(event.id, orderName) });
       toast({ title: "Commande réactivée !", description: "Rendez-vous à la caisse pour payer." });
     } catch (e: any) {
-      const details = e?.response?.data?.details as { article: string; demande: number; disponible: number }[] | undefined;
-      if (details && details.length > 0) {
-        const msg = details.map(d => `${d.article} : demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
+      const data = e?.response?.data;
+      if (data?.unavailable && data.unavailable.length > 0) {
+        const names = data.unavailable.map((i: any) => i.article).join(", ");
+        toast({ variant: "destructive", title: "Articles non disponibles", description: `Ces articles ne sont plus en vente : ${names}. Créez une nouvelle commande.` });
+      } else if (data?.details && data.details.length > 0) {
+        const msg = data.details.map((d: any) => `${d.article} : demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
         toast({ variant: "destructive", title: "Stock insuffisant", description: msg });
       } else {
         toast({ variant: "destructive", title: "Impossible de réactiver", description: "Le stock est insuffisant. Créez une nouvelle commande." });
@@ -238,7 +241,11 @@ export default function BuyerPage() {
                 <DialogDescription>
                   Une commande <strong>"{existingOrderConflict.nom_commande}"</strong> est déjà en cours de construction.
                 </DialogDescription>
-                <p className="text-sm text-muted-foreground">Est-ce votre commande ? Si oui, vous pouvez la reprendre. Sinon, choisissez un autre nom.</p>
+                <p className="text-sm text-muted-foreground">
+                  {settings?.allow_reprendre_commande
+                    ? "Est-ce votre commande ? Si oui, vous pouvez la reprendre. Sinon, choisissez un autre nom."
+                    : "Ce nom est déjà utilisé. Choisissez un nom différent pour votre commande."}
+                </p>
                 {existingOrderConflict.items && existingOrderConflict.items.length > 0 && (
                   <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
                     {existingOrderConflict.items.map(item => (
@@ -253,18 +260,20 @@ export default function BuyerPage() {
                   <Button variant="outline" onClick={() => { setShowConflictDialog(false); setOrderName(""); }}>
                     Changer de nom
                   </Button>
-                  <Button onClick={() => {
-                    const cartItems: Record<number, number> = {};
-                    existingOrderConflict.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
-                    setEditingOrderId(existingOrderConflict.id);
-                    setCart(cartItems);
-                    setShowConflictDialog(false);
-                    setExistingOrderConflict(null);
-                    setStep("catalog");
-                  }}>
-                    <RotateCcw size={16} className="mr-2" />
-                    Reprendre ma commande
-                  </Button>
+                  {settings?.allow_reprendre_commande && (
+                    <Button onClick={() => {
+                      const cartItems: Record<number, number> = {};
+                      existingOrderConflict.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
+                      setEditingOrderId(existingOrderConflict.id);
+                      setCart(cartItems);
+                      setShowConflictDialog(false);
+                      setExistingOrderConflict(null);
+                      setStep("catalog");
+                    }}>
+                      <RotateCcw size={16} className="mr-2" />
+                      Reprendre ma commande
+                    </Button>
+                  )}
                 </DialogFooter>
               </>
             ) : existingOrderConflict?.statut === "reservee" ? (
@@ -366,13 +375,8 @@ export default function BuyerPage() {
                   <div className="font-bold text-lg">En attente de paiement</div>
                 </div>
               </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-                <ArrowRight size={24} className="mx-auto text-amber-600 mb-2" />
-                <p className="font-black text-amber-900 text-lg">RENDEZ-VOUS À LA CAISSE</p>
-                <p className="text-sm text-amber-700 mt-1">Donnez votre nom <strong>{orderName}</strong> au caissier</p>
-              </div>
               {secondsLeft !== null && (
-                <div className={`mt-3 rounded-xl p-3 text-center border transition-colors ${
+                <div className={`rounded-xl p-3 text-center border transition-colors ${
                   secondsLeft < 120
                     ? "bg-red-50 border-red-300 text-red-700"
                     : "bg-amber-50/70 border-amber-200 text-amber-800"
@@ -391,6 +395,11 @@ export default function BuyerPage() {
                   </p>
                 </div>
               )}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                <ArrowRight size={24} className="mx-auto text-amber-600 mb-2" />
+                <p className="font-black text-amber-900 text-lg">RENDEZ-VOUS À LA CAISSE</p>
+                <p className="text-sm text-amber-700 mt-1">Donnez votre nom <strong>{orderName}</strong> au caissier</p>
+              </div>
             </div>
           )}
 

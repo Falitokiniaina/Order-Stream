@@ -165,6 +165,7 @@ export interface Settings {
   evenement_id: number;
   temps_reservation_minutes: number;
   vente_ouverte: boolean;
+  allow_reprendre_commande: boolean;
   updated_at: string;
 }
 
@@ -174,6 +175,7 @@ export interface SettingsUpdate {
   mdp_preparateur?: string;
   mdp_admin?: string;
   vente_ouverte?: boolean;
+  allow_reprendre_commande?: boolean;
 }
 
 export interface TopArticle {

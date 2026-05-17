@@ -629,6 +629,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
   const [form, setForm] = useState({
     temps_reservation_minutes: settings?.temps_reservation_minutes || 15,
     vente_ouverte: settings?.vente_ouverte ?? true,
+    allow_reprendre_commande: settings?.allow_reprendre_commande ?? true,
     mdp_caisse: "",
     mdp_preparateur: "",
     mdp_admin: ""
@@ -636,7 +637,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
 
   useMemo(() => {
     if (settings) {
-      setForm(f => ({ ...f, temps_reservation_minutes: settings.temps_reservation_minutes, vente_ouverte: settings.vente_ouverte }));
+      setForm(f => ({ ...f, temps_reservation_minutes: settings.temps_reservation_minutes, vente_ouverte: settings.vente_ouverte, allow_reprendre_commande: settings.allow_reprendre_commande }));
     }
   }, [settings]);
 
@@ -644,7 +645,8 @@ function ConfigTab({ eventId }: { eventId: number }) {
     try {
       const dataToUpdate: any = {
         temps_reservation_minutes: parseInt(form.temps_reservation_minutes.toString(), 10),
-        vente_ouverte: form.vente_ouverte
+        vente_ouverte: form.vente_ouverte,
+        allow_reprendre_commande: form.allow_reprendre_commande
       };
       if (form.mdp_caisse) dataToUpdate.mdp_caisse = form.mdp_caisse;
       if (form.mdp_preparateur) dataToUpdate.mdp_preparateur = form.mdp_preparateur;
@@ -672,6 +674,14 @@ function ConfigTab({ eventId }: { eventId: number }) {
             <p className="text-sm text-muted-foreground">Permet de suspendre temporairement les nouvelles commandes.</p>
           </div>
           <Switch checked={form.vente_ouverte} onCheckedChange={(c) => setForm({ ...form, vente_ouverte: c })} />
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border">
+          <div>
+            <Label className="text-base font-bold">Reprendre une commande en cours</Label>
+            <p className="text-sm text-muted-foreground">Permet à un acheteur de reprendre sa commande s'il entre un nom déjà utilisé. Si désactivé, tout nom existant bloque l'accès.</p>
+          </div>
+          <Switch checked={form.allow_reprendre_commande} onCheckedChange={(c) => setForm({ ...form, allow_reprendre_commande: c })} />
         </div>
 
         <div className="grid gap-2">

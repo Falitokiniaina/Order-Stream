@@ -343,10 +343,21 @@ router.post("/orders/:id/reactivate", async (req, res) => {
     }
 
     const itemsResult = await client.query(
-      "SELECT ci.*, a.nom as article_nom FROM commande_items ci JOIN articles a ON ci.article_id = a.id WHERE ci.commande_id = $1",
+      "SELECT ci.*, a.nom as article_nom, a.disponible as article_disponible FROM commande_items ci JOIN articles a ON ci.article_id = a.id WHERE ci.commande_id = $1",
       [orderId]
     );
     const items = itemsResult.rows;
+
+    // Check that all articles are still available for sale
+    const unavailableItems = items.filter((item: any) => !item.article_disponible);
+    if (unavailableItems.length > 0) {
+      await client.query("ROLLBACK");
+      const names = unavailableItems.map((i: any) => i.article_nom).join(", ");
+      return res.status(400).json({
+        error: "Certains articles ne sont plus en vente",
+        unavailable: unavailableItems.map((i: any) => ({ article: i.article_nom }))
+      });
+    }
 
     const paramsResult = await client.query(
       "SELECT temps_reservation_minutes FROM parametrage WHERE evenement_id = $1",

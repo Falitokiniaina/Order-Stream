@@ -81,9 +81,12 @@ function CaisseContent({ slug }: { slug: string }) {
       queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey(event.id) });
       toast({ title: "Commande réactivée !", description: "La commande est maintenant réservée." });
     } catch (e: any) {
-      const details = e?.response?.data?.details as { article: string; demande: number; disponible: number }[] | undefined;
-      if (details && details.length > 0) {
-        const msg = details.map(d => `${d.article}: demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
+      const data = e?.response?.data;
+      if (data?.unavailable && data.unavailable.length > 0) {
+        const names = data.unavailable.map((i: any) => i.article).join(", ");
+        toast({ title: "Articles non disponibles", description: `Ces articles ne sont plus en vente : ${names}. L'acheteur doit créer une nouvelle commande.`, variant: "destructive" });
+      } else if (data?.details && data.details.length > 0) {
+        const msg = data.details.map((d: any) => `${d.article}: demandé ${d.demande}, dispo ${d.disponible}`).join(" | ");
         toast({ title: "Stock insuffisant", description: `L'acheteur doit créer une nouvelle commande. ${msg}`, variant: "destructive" });
       } else {
         toast({ title: "Impossible de réactiver", description: "Stock insuffisant. L'acheteur doit créer une nouvelle commande.", variant: "destructive" });

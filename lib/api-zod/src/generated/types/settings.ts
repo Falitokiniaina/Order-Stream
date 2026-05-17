@@ -11,5 +11,6 @@ export interface Settings {
   evenement_id: number;
   temps_reservation_minutes: number;
   vente_ouverte: boolean;
+  allow_reprendre_commande: boolean;
   updated_at: string;
 }

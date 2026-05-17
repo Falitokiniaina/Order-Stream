@@ -12,4 +12,5 @@ export interface SettingsUpdate {
   mdp_preparateur?: string;
   mdp_admin?: string;
   vente_ouverte?: boolean;
+  allow_reprendre_commande?: boolean;
 }

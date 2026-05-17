@@ -562,6 +562,7 @@ export const GetSettingsResponse = zod.object({
   "evenement_id": zod.number(),
   "temps_reservation_minutes": zod.number(),
   "vente_ouverte": zod.boolean(),
+  "allow_reprendre_commande": zod.boolean(),
   "updated_at": zod.string()
 })
 
@@ -578,7 +579,8 @@ export const UpdateSettingsBody = zod.object({
   "mdp_caisse": zod.string().optional(),
   "mdp_preparateur": zod.string().optional(),
   "mdp_admin": zod.string().optional(),
-  "vente_ouverte": zod.boolean().optional()
+  "vente_ouverte": zod.boolean().optional(),
+  "allow_reprendre_commande": zod.boolean().optional()
 })
 
 export const UpdateSettingsResponse = zod.object({
@@ -586,6 +588,7 @@ export const UpdateSettingsResponse = zod.object({
   "evenement_id": zod.number(),
   "temps_reservation_minutes": zod.number(),
   "vente_ouverte": zod.boolean(),
+  "allow_reprendre_commande": zod.boolean(),
   "updated_at": zod.string()
 })
 
