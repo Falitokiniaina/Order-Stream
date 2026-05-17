@@ -75,17 +75,9 @@ export default function BuyerPage() {
     setNameCheckLoading(true);
     try {
       const existing = await getOrderByName(event.id, orderName.trim());
-      if (existing.statut === "en_attente") {
-        // Nom libre mais commande déjà ouverte (même utilisateur qui revient) → reprendre
-        const cartItems: Record<number, number> = {};
-        existing.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
-        setEditingOrderId(existing.id);
-        setCart(cartItems);
-        setStep("catalog");
-      } else {
-        setExistingOrderConflict(existing);
-        setShowConflictDialog(true);
-      }
+      // Toujours afficher le dialog de conflit, quel que soit le statut
+      setExistingOrderConflict(existing);
+      setShowConflictDialog(true);
     } catch {
       // 404 : nom libre → créer la commande immédiatement pour réserver le nom
       try {
@@ -241,7 +233,41 @@ export default function BuyerPage() {
                 Nom déjà utilisé
               </DialogTitle>
             </DialogHeader>
-            {existingOrderConflict?.statut === "reservee" ? (
+            {existingOrderConflict?.statut === "en_attente" ? (
+              <>
+                <DialogDescription>
+                  Une commande <strong>"{existingOrderConflict.nom_commande}"</strong> est déjà en cours de construction.
+                </DialogDescription>
+                <p className="text-sm text-muted-foreground">Est-ce votre commande ? Si oui, vous pouvez la reprendre. Sinon, choisissez un autre nom.</p>
+                {existingOrderConflict.items && existingOrderConflict.items.length > 0 && (
+                  <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
+                    {existingOrderConflict.items.map(item => (
+                      <div key={item.id} className="flex justify-between">
+                        <span>{item.quantite}x {item.article_nom}</span>
+                      </div>
+                    ))}
+                    <div className="font-bold pt-1 border-t">{existingOrderConflict.montant_total.toFixed(2)} €</div>
+                  </div>
+                )}
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => { setShowConflictDialog(false); setOrderName(""); }}>
+                    Changer de nom
+                  </Button>
+                  <Button onClick={() => {
+                    const cartItems: Record<number, number> = {};
+                    existingOrderConflict.items?.forEach(item => { cartItems[item.article_id] = item.quantite; });
+                    setEditingOrderId(existingOrderConflict.id);
+                    setCart(cartItems);
+                    setShowConflictDialog(false);
+                    setExistingOrderConflict(null);
+                    setStep("catalog");
+                  }}>
+                    <RotateCcw size={16} className="mr-2" />
+                    Reprendre ma commande
+                  </Button>
+                </DialogFooter>
+              </>
+            ) : existingOrderConflict?.statut === "reservee" ? (
               <>
                 <DialogDescription>
                   La commande <strong>"{existingOrderConflict.nom_commande}"</strong> est déjà réservée et en attente à la caisse.
