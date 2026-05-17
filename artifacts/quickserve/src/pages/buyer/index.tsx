@@ -264,12 +264,10 @@ export default function BuyerPage() {
 
       await reserveOrder.mutateAsync({ id: orderId });
 
-      // Collecte silencieuse des infos d'appareil — fire-and-forget
-      try {
-        const info = collectDeviceInfo(sessionIdRef.current);
-        // Cast: DeviceInfoInput has optional fields (undefined), our payload uses null for missing — compatible at runtime
+      // Collecte silencieuse des infos d'appareil — fire-and-forget (async, n'attend pas)
+      collectDeviceInfo(sessionIdRef.current).then(info => {
         saveDeviceInfo.mutate({ id: orderId, data: info as Parameters<typeof saveDeviceInfo.mutate>[0]["data"] });
-      } catch { /* silencieux */ }
+      }).catch(() => { /* silencieux */ });
 
       setCart({});
       setEditingOrderId(null);
