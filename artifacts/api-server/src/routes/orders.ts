@@ -245,7 +245,7 @@ router.post("/orders/:id/reserve", async (req, res) => {
         SELECT
           a.stock_total -
           COALESCE((SELECT SUM(r.quantite_reservee) FROM reservations r WHERE r.article_id = a.id AND r.active = true AND r.expire_at > NOW()), 0) -
-          COALESCE((SELECT SUM(ci2.quantite) FROM commande_items ci2 JOIN commandes c2 ON ci2.commande_id = c2.id WHERE ci2.article_id = a.id AND ci2.statut_livraison = 'non_livre' AND c2.statut IN ('payee', 'livree_partiellement')), 0)
+          COALESCE((SELECT SUM(ci2.quantite) FROM commande_items ci2 JOIN commandes c2 ON ci2.commande_id = c2.id WHERE ci2.article_id = a.id AND c2.statut IN ('payee', 'livree_partiellement', 'livree')), 0)
           AS stock_disponible
         FROM articles a WHERE a.id = $1 FOR UPDATE
       `, [item.article_id]);

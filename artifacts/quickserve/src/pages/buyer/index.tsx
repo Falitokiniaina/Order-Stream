@@ -274,8 +274,21 @@ export default function BuyerPage() {
       setExistingOrderConflict(null);
       setStep("status");
     } catch (e: any) {
-      const msg = e?.response?.data?.error || "Impossible de réserver la commande. Veuillez réessayer.";
-      toast({ variant: "destructive", title: "Erreur", description: msg });
+      // Refresh article stock so the buyer sees updated quantities
+      queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(event?.id || 0) });
+      if (e?.response?.status === 409) {
+        const articleName = e?.response?.data?.article;
+        toast({
+          variant: "destructive",
+          title: articleName ? `"${articleName}" est épuisé` : "Stock insuffisant",
+          description: articleName
+            ? `Il ne reste plus assez de stock pour "${articleName}". Le catalogue a été mis à jour — retirez cet article de votre panier.`
+            : (e?.response?.data?.error || "Un article de votre panier n'est plus disponible en quantité souhaitée."),
+          duration: 7000,
+        });
+      } else {
+        toast({ variant: "destructive", title: "Erreur", description: "Impossible de réserver la commande. Veuillez réessayer." });
+      }
     }
   };
 
