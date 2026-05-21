@@ -12,5 +12,6 @@ export interface ArticleUpdate {
   prix?: number;
   image_url?: string;
   stock_total?: number;
+  display_order?: number;
   disponible?: boolean;
 }

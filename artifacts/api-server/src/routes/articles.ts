@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, articlesTable, commandeItemsTable, reservationsTable, commandesTable } from "@workspace/db";
-import { eq, and, gt, sql } from "drizzle-orm";
+import { eq, and, gt, sql, max } from "drizzle-orm";
 
 const router = Router();
 
@@ -43,7 +43,7 @@ router.get("/events/:eventId/articles", async (req, res) => {
   try {
     const articles = await db.select().from(articlesTable)
       .where(eq(articlesTable.evenement_id, eventId))
-      .orderBy(articlesTable.created_at);
+      .orderBy(articlesTable.display_order, articlesTable.created_at);
 
     const articlesWithStock = await Promise.all(
       articles.map(async (a) => ({
@@ -72,6 +72,13 @@ router.post("/events/:eventId/articles", async (req, res) => {
   if (!nom || prix === undefined) return res.status(400).json({ error: "nom and prix required" });
 
   try {
+    // Auto-assign next display_order (max + 1)
+    const [{ maxOrder }] = await db
+      .select({ maxOrder: max(articlesTable.display_order) })
+      .from(articlesTable)
+      .where(eq(articlesTable.evenement_id, eventId));
+    const nextOrder = (maxOrder ?? -1) + 1;
+
     const [article] = await db.insert(articlesTable).values({
       evenement_id: eventId,
       nom,
@@ -80,6 +87,7 @@ router.post("/events/:eventId/articles", async (req, res) => {
       image_url: image_url ?? null,
       stock_total: stock_total ?? 50,
       disponible: disponible ?? true,
+      display_order: nextOrder,
     }).returning();
 
     res.status(201).json({ ...article, prix: parseFloat(article.prix), stock_disponible: article.stock_total });
@@ -89,13 +97,36 @@ router.post("/events/:eventId/articles", async (req, res) => {
   }
 });
 
+// Reorder: receives ordered array of article IDs, assigns display_order 0..n-1
+router.put("/events/:eventId/articles/reorder", async (req, res) => {
+  const eventId = parseInt(req.params.eventId);
+  if (isNaN(eventId)) return res.status(400).json({ error: "Invalid eventId" });
+
+  const { order } = req.body as { order?: number[] };
+  if (!Array.isArray(order)) return res.status(400).json({ error: "order array required" });
+
+  try {
+    await Promise.all(
+      order.map((articleId, index) =>
+        db.update(articlesTable)
+          .set({ display_order: index })
+          .where(and(eq(articlesTable.id, articleId), eq(articlesTable.evenement_id, eventId)))
+      )
+    );
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Reorder articles error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.patch("/articles/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
 
-  const { nom, description, prix, image_url, stock_total, disponible } = req.body as {
+  const { nom, description, prix, image_url, stock_total, disponible, display_order } = req.body as {
     nom?: string; description?: string; prix?: number; image_url?: string;
-    stock_total?: number; disponible?: boolean;
+    stock_total?: number; disponible?: boolean; display_order?: number;
   };
 
   try {
@@ -106,6 +137,7 @@ router.patch("/articles/:id", async (req, res) => {
     if (image_url !== undefined) updates.image_url = image_url;
     if (stock_total !== undefined) updates.stock_total = stock_total;
     if (disponible !== undefined) updates.disponible = disponible;
+    if (display_order !== undefined) updates.display_order = display_order;
 
     const [article] = await db.update(articlesTable).set(updates).where(eq(articlesTable.id, id)).returning();
     if (!article) return res.status(404).json({ error: "Article not found" });

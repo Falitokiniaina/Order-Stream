@@ -38,6 +38,7 @@ import type {
   OrdersSummary,
   PartialDeliveryInput,
   PaymentInput,
+  ReorderArticlesInput,
   SessionInfo,
   Settings,
   SettingsUpdate,
@@ -942,6 +943,78 @@ export const useCreateArticle = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateArticleMutationOptions(options));
+    }
+
+export const getReorderArticlesUrl = (eventId: number,) => {
+
+
+
+
+  return `/api/events/${eventId}/articles/reorder`
+}
+
+/**
+ * @summary Update display order for all articles of an event
+ */
+export const reorderArticles = async (eventId: number,
+    reorderArticlesInput: ReorderArticlesInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getReorderArticlesUrl(eventId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reorderArticlesInput,)
+  }
+);}
+
+
+
+
+export const getReorderArticlesMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderArticles>>, TError,{eventId: number;data: BodyType<ReorderArticlesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reorderArticles>>, TError,{eventId: number;data: BodyType<ReorderArticlesInput>}, TContext> => {
+
+const mutationKey = ['reorderArticles'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reorderArticles>>, {eventId: number;data: BodyType<ReorderArticlesInput>}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  reorderArticles(eventId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReorderArticlesMutationResult = NonNullable<Awaited<ReturnType<typeof reorderArticles>>>
+    export type ReorderArticlesMutationBody = BodyType<ReorderArticlesInput>
+    export type ReorderArticlesMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update display order for all articles of an event
+ */
+export const useReorderArticles = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reorderArticles>>, TError,{eventId: number;data: BodyType<ReorderArticlesInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reorderArticles>>,
+        TError,
+        {eventId: number;data: BodyType<ReorderArticlesInput>},
+        TContext
+      > => {
+      return useMutation(getReorderArticlesMutationOptions(options));
     }
 
 export const getUpdateArticleUrl = (id: number,) => {

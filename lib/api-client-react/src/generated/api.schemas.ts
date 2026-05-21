@@ -72,7 +72,13 @@ export interface Article {
   stock_total: number;
   stock_disponible: number;
   disponible: boolean;
+  display_order?: number;
   created_at: string;
+}
+
+export interface ReorderArticlesInput {
+  /** Article IDs in the desired display order */
+  order: number[];
 }
 
 export interface ArticleInput {
@@ -90,6 +96,7 @@ export interface ArticleUpdate {
   prix?: number;
   image_url?: string;
   stock_total?: number;
+  display_order?: number;
   disponible?: boolean;
 }
 

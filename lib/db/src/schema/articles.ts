@@ -12,6 +12,7 @@ export const articlesTable = pgTable("articles", {
   image_url: text("image_url"),
   stock_total: integer("stock_total").notNull().default(50),
   disponible: boolean("disponible").notNull().default(true),
+  display_order: integer("display_order").notNull().default(0),
   created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

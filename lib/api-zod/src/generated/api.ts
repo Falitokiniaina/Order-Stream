@@ -144,6 +144,7 @@ export const ListArticlesResponseItem = zod.object({
   "stock_total": zod.number(),
   "stock_disponible": zod.number(),
   "disponible": zod.boolean(),
+  "display_order": zod.number().optional(),
   "created_at": zod.string()
 })
 export const ListArticlesResponse = zod.array(ListArticlesResponseItem)
@@ -167,6 +168,18 @@ export const CreateArticleBody = zod.object({
 
 
 /**
+ * @summary Update display order for all articles of an event
+ */
+export const ReorderArticlesParams = zod.object({
+  "eventId": zod.coerce.number()
+})
+
+export const ReorderArticlesBody = zod.object({
+  "order": zod.array(zod.number()).describe('Article IDs in the desired display order')
+})
+
+
+/**
  * @summary Update article
  */
 export const UpdateArticleParams = zod.object({
@@ -179,6 +192,7 @@ export const UpdateArticleBody = zod.object({
   "prix": zod.number().optional(),
   "image_url": zod.string().optional(),
   "stock_total": zod.number().optional(),
+  "display_order": zod.number().optional(),
   "disponible": zod.boolean().optional()
 })
 
@@ -192,6 +206,7 @@ export const UpdateArticleResponse = zod.object({
   "stock_total": zod.number(),
   "stock_disponible": zod.number(),
   "disponible": zod.boolean(),
+  "display_order": zod.number().optional(),
   "created_at": zod.string()
 })
 

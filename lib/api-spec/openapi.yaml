@@ -235,6 +235,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Article"
 
+  /events/{eventId}/articles/reorder:
+    put:
+      operationId: reorderArticles
+      tags: [articles]
+      summary: Update display order for all articles of an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReorderArticlesInput"
+      responses:
+        "200":
+          description: Order updated
+
   /articles/{id}:
     patch:
       operationId: updateArticle
@@ -834,8 +855,20 @@ components:
           type: integer
         disponible:
           type: boolean
+        display_order:
+          type: integer
         created_at:
           type: string
+
+    ReorderArticlesInput:
+      type: object
+      required: [order]
+      properties:
+        order:
+          type: array
+          items:
+            type: integer
+          description: Article IDs in the desired display order
 
     ArticleInput:
       type: object
@@ -866,6 +899,8 @@ components:
         image_url:
           type: string
         stock_total:
+          type: integer
+        display_order:
           type: integer
         disponible:
           type: boolean

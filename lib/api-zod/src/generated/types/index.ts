@@ -29,6 +29,7 @@ export * from './ordersSummary';
 export * from './orderStatut';
 export * from './partialDeliveryInput';
 export * from './paymentInput';
+export * from './reorderArticlesInput';
 export * from './sessionInfo';
 export * from './settings';
 export * from './settingsUpdate';

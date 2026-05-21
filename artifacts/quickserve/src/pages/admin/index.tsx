@@ -7,7 +7,7 @@ import {
   useGetDashboard, getGetDashboardQueryKey,
   useGetSettings, getGetSettingsQueryKey, useUpdateSettings,
   useListArticles, getListArticlesQueryKey,
-  useCreateArticle, useUpdateArticle, useDeleteArticle,
+  useCreateArticle, useUpdateArticle, useDeleteArticle, useReorderArticles,
   useListOrders, getListOrdersQueryKey,
   useGetDeviceInfo, getGetDeviceInfoQueryKey,
   useListSnapshots, getListSnapshotsQueryKey,
@@ -26,7 +26,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LabelList } from "recharts";
-import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw, Monitor, Smartphone, Tablet, X, Archive, RotateCcw, AlertTriangle } from "lucide-react";
+import { Settings, BarChart3, Package as PackageIcon, Plus, Save, Trash2, LogOut, CalendarPlus, List, Search, Camera, Info, RefreshCw, Monitor, Smartphone, Tablet, X, Archive, RotateCcw, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPage() {
@@ -324,6 +324,25 @@ function StockTab({ eventId }: { eventId: number }) {
   const updateArticle = useUpdateArticle();
   const createArticle = useCreateArticle();
   const deleteArticle = useDeleteArticle();
+  const reorderArticles = useReorderArticles();
+
+  const handleMove = async (index: number, direction: -1 | 1) => {
+    if (!articles) return;
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= articles.length) return;
+    const reordered = [...articles];
+    [reordered[index], reordered[newIndex]] = [reordered[newIndex], reordered[index]];
+    const order = reordered.map(a => a.id);
+    // Optimistic update via cache
+    queryClient.setQueryData(getListArticlesQueryKey(eventId), reordered);
+    try {
+      await reorderArticles.mutateAsync({ eventId, data: { order } });
+      queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
+    } catch {
+      queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
+      toast({ title: "Erreur lors du réordonnancement", variant: "destructive" });
+    }
+  };
 
   const handleEditClick = (article: any) => {
     setEditingId(article.id);
@@ -417,6 +436,7 @@ function StockTab({ eventId }: { eventId: number }) {
         <table className="w-full text-sm text-left">
           <thead className="bg-muted/50 text-muted-foreground uppercase tracking-wider text-xs border-b">
             <tr>
+              <th className="px-3 py-3 font-semibold w-20 text-center">Ordre</th>
               <th className="px-4 py-3 font-semibold w-12">Image</th>
               <th className="px-4 py-3 font-semibold">Nom</th>
               <th className="px-4 py-3 font-semibold text-right">Prix</th>
@@ -427,10 +447,31 @@ function StockTab({ eventId }: { eventId: number }) {
             </tr>
           </thead>
           <tbody className="divide-y">
-            {articles?.map(article => {
+            {articles?.map((article, index) => {
               const isEditing = editingId === article.id;
               return (
                 <tr key={article.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-3 py-3">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <button
+                        onClick={() => handleMove(index, -1)}
+                        disabled={index === 0 || reorderArticles.isPending}
+                        className="p-0.5 rounded hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-muted-foreground hover:text-foreground"
+                        title="Monter"
+                      >
+                        <ChevronUp size={16} />
+                      </button>
+                      <span className="text-xs font-mono text-muted-foreground w-5 text-center">{index + 1}</span>
+                      <button
+                        onClick={() => handleMove(index, 1)}
+                        disabled={index === (articles?.length ?? 0) - 1 || reorderArticles.isPending}
+                        className="p-0.5 rounded hover:bg-muted disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-muted-foreground hover:text-foreground"
+                        title="Descendre"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <label className="cursor-pointer group relative block w-10 h-10 rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/30 hover:border-primary transition-colors">
                       {article.image_url ? (

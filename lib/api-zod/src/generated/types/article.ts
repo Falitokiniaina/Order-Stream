@@ -18,5 +18,6 @@ export interface Article {
   stock_total: number;
   stock_disponible: number;
   disponible: boolean;
+  display_order?: number;
   created_at: string;
 }
