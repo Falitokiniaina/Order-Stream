@@ -19,21 +19,20 @@ export async function getStockDisponible(articleId: number, stockTotal: number):
     );
   const reserved = Number(reservedResult[0]?.total ?? 0);
 
-  // Quantity in paid, non-delivered commandes
-  const paidNotDeliveredResult = await db
+  // Quantity in all committed orders (payée, partiellement livrée, livrée) — tous statuts livraison confondus
+  const committedResult = await db
     .select({ total: sql<number>`COALESCE(SUM(${commandeItemsTable.quantite}), 0)` })
     .from(commandeItemsTable)
     .innerJoin(commandesTable, eq(commandeItemsTable.commande_id, commandesTable.id))
     .where(
       and(
         eq(commandeItemsTable.article_id, articleId),
-        eq(commandeItemsTable.statut_livraison, "non_livre"),
-        sql`${commandesTable.statut} IN ('payee', 'livree_partiellement')`
+        sql`${commandesTable.statut} IN ('payee', 'livree_partiellement', 'livree')`
       )
     );
-  const paidNotDelivered = Number(paidNotDeliveredResult[0]?.total ?? 0);
+  const committed = Number(committedResult[0]?.total ?? 0);
 
-  return Math.max(0, stockTotal - reserved - paidNotDelivered);
+  return Math.max(0, stockTotal - reserved - committed);
 }
 
 router.get("/events/:eventId/articles", async (req, res) => {

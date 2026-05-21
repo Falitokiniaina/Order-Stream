@@ -202,7 +202,7 @@ function DashboardTab({ eventId }: { eventId: number }) {
     { key: "nb_commandes_en_attente",          label: "En attente",         color: "text-muted-foreground", desc: "Panier créé par l'acheteur, pas encore réservé." },
     { key: "nb_commandes_reservees",            label: "Réservée",           color: "text-amber-600",        desc: "Stock bloqué, commande en attente à la caisse." },
     { key: "nb_commandes_expirees",             label: "Expirée",            color: "text-destructive",      desc: "La réservation n'a pas été payée à temps (timer automatique)." },
-    { key: "nb_commandes_payees",               label: "Payée",              color: "text-blue-600",         desc: "Commande réglée par le caissier, en attente de préparation." },
+    { key: "nb_commandes_payees",               label: "En attente de livraison", color: "text-blue-600",    desc: "Commande réglée par le caissier, en attente de préparation." },
     { key: "nb_commandes_livrees_partiellement",label: "Livrée part.",       color: "text-orange-500",       desc: "Certains articles remis, d'autres encore en attente de livraison." },
     { key: "nb_commandes_livrees",              label: "Livrée",             color: "text-green-600",        desc: "Commande complètement remise au client par le préparateur." },
   ] as const;
