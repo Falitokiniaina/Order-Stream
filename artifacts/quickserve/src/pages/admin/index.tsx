@@ -317,7 +317,7 @@ function StockTab({ eventId }: { eventId: number }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [showNewArticleDialog, setShowNewArticleDialog] = useState(false);
-  const [newArticleForm, setNewArticleForm] = useState({ nom: "", prix: "", stock_total: "", disponible: true });
+  const [newArticleForm, setNewArticleForm] = useState({ nom: "", description: "", prix: "", stock_total: "", disponible: true });
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -356,6 +356,7 @@ function StockTab({ eventId }: { eventId: number }) {
         id: editingId,
         data: {
           nom: editForm.nom,
+          description: editForm.description ?? null,
           prix: parseFloat(editForm.prix),
           stock_total: parseInt(editForm.stock_total, 10),
           disponible: editForm.disponible
@@ -410,6 +411,7 @@ function StockTab({ eventId }: { eventId: number }) {
         eventId,
         data: {
           nom: newArticleForm.nom,
+          description: newArticleForm.description || undefined,
           prix: parseFloat(newArticleForm.prix),
           stock_total: parseInt(newArticleForm.stock_total, 10),
           disponible: newArticleForm.disponible
@@ -417,7 +419,7 @@ function StockTab({ eventId }: { eventId: number }) {
       });
       queryClient.invalidateQueries({ queryKey: getListArticlesQueryKey(eventId) });
       setShowNewArticleDialog(false);
-      setNewArticleForm({ nom: "", prix: "", stock_total: "", disponible: true });
+      setNewArticleForm({ nom: "", description: "", prix: "", stock_total: "", disponible: true });
       toast({ title: "Article créé !" });
     } catch (e) {
       toast({ title: "Erreur lors de la création", variant: "destructive" });
@@ -493,9 +495,25 @@ function StockTab({ eventId }: { eventId: number }) {
                     </label>
                   </td>
                   <td className="px-4 py-3 font-medium">
-                    {isEditing
-                      ? <Input value={editForm.nom} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} className="h-8" />
-                      : article.nom}
+                    {isEditing ? (
+                      <div className="flex flex-col gap-1.5">
+                        <Input value={editForm.nom} onChange={e => setEditForm({ ...editForm, nom: e.target.value })} className="h-8" placeholder="Nom" />
+                        <textarea
+                          value={editForm.description ?? ""}
+                          onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                          placeholder="Description courte (ex : Fraîche et légère, servie bien givrée…)"
+                          rows={2}
+                          className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <div>{article.nom}</div>
+                        {article.description && (
+                          <div className="text-xs text-muted-foreground/70 mt-0.5 italic leading-snug">{article.description}</div>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-primary">
                     {isEditing
@@ -548,6 +566,16 @@ function StockTab({ eventId }: { eventId: number }) {
             <div className="grid gap-2">
               <Label>Nom de l'article</Label>
               <Input placeholder="Bière pression" value={newArticleForm.nom} onChange={e => setNewArticleForm({ ...newArticleForm, nom: e.target.value })} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Description <span className="text-muted-foreground font-normal">(facultative)</span></Label>
+              <textarea
+                value={newArticleForm.description}
+                onChange={e => setNewArticleForm({ ...newArticleForm, description: e.target.value })}
+                placeholder="Ex : Fraîche et légère, servie bien givrée…"
+                rows={2}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
