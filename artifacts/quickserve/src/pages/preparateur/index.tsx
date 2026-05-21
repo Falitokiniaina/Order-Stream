@@ -254,23 +254,26 @@ function PreparateurContent({ slug }: { slug: string }) {
           <div className="py-4 space-y-4">
             <p className="text-sm text-muted-foreground">Sélectionnez les articles que vous allez livrer maintenant.</p>
             <div className="space-y-3 bg-muted/50 p-4 rounded-xl border">
-              {currentOrder?.items?.map(item => (
-                <div key={item.id} className="flex items-center space-x-3">
-                  <Checkbox 
-                    id={`item-${item.id}`} 
-                    checked={item.statut_livraison === 'livre' || selectedItems.includes(item.id)}
-                    onCheckedChange={() => item.statut_livraison !== 'livre' && toggleItem(item.id)}
-                    disabled={item.statut_livraison === 'livre'}
-                  />
-                  <label 
-                    htmlFor={`item-${item.id}`} 
-                    className={`text-base font-medium leading-none flex-1 cursor-pointer ${item.statut_livraison === 'livre' ? 'text-muted-foreground opacity-60' : ''}`}
-                  >
-                    <span className="font-bold">{item.quantite}x</span> {item.article_nom}
-                    {item.statut_livraison === 'livre' && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">Déjà livré</span>}
-                  </label>
-                </div>
-              ))}
+              {currentOrder?.items?.map(item => {
+                const delivered = item.statut_livraison === 'livre';
+                return (
+                  <div key={item.id} className={`flex items-center space-x-3 ${delivered ? 'opacity-50' : ''}`}>
+                    <Checkbox 
+                      id={`item-${item.id}`} 
+                      checked={delivered || selectedItems.includes(item.id)}
+                      onCheckedChange={() => !delivered && toggleItem(item.id)}
+                      disabled={delivered}
+                      className={delivered ? 'cursor-not-allowed' : ''}
+                    />
+                    <label 
+                      htmlFor={`item-${item.id}`} 
+                      className={`text-base font-medium leading-none flex-1 ${delivered ? 'line-through text-muted-foreground cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <span className="font-bold">{item.quantite}x</span> {item.article_nom}
+                    </label>
+                  </div>
+                );
+              })}
             </div>
           </div>
           
