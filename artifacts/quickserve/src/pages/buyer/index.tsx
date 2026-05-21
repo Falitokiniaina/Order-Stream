@@ -714,7 +714,7 @@ function ArticleCard({ article, qty, index, onIncrease, onDecrease }: ArticleCar
       <div className="p-3 flex-1 flex flex-col">
         <div className="font-semibold leading-tight mb-0.5">{article.nom}</div>
         {article.description && (
-          <p className="text-xs text-muted-foreground italic leading-snug mb-1 line-clamp-2">{article.description}</p>
+          <p className="text-xs text-muted-foreground italic leading-snug mb-1">{article.description}</p>
         )}
         <div className="text-primary font-bold mb-1">{article.prix.toFixed(2)} €</div>
         <div className={`text-xs mb-2 font-medium ${article.stock_disponible <= 3 ? "text-orange-500" : "text-muted-foreground"}`}>
