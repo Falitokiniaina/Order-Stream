@@ -1,4 +1,5 @@
 import { PasswordGate } from "@/components/password-gate";
+import { formatOrderRef } from "@/lib/utils";
 import { LoginInputRole } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import {
@@ -689,7 +690,7 @@ function CommandesTab({ eventId }: { eventId: number }) {
                   <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                     {new Date(order.created_at).toLocaleString("fr-FR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
                   </td>
-                  <td className="px-4 py-3 font-bold capitalize">{order.nom_commande}</td>
+                  <td className="px-4 py-3 font-bold capitalize">{formatOrderRef(order.nom_commande, order.id)}</td>
                   <td className="px-4 py-3 text-muted-foreground text-xs max-w-[200px] truncate">
                     {order.items?.map(i => `${i.quantite}× ${i.article_nom}`).join(", ")}
                   </td>
@@ -1094,7 +1095,7 @@ function DeviceInfoModal({ order, onClose }: { order: Order; onClose: () => void
         <div className="bg-muted/40 rounded-xl p-4">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">🧾 Résumé commande</p>
           <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-            <div><span className="text-muted-foreground">Acheteur :</span> <span className="font-bold capitalize">{order.nom_commande}</span></div>
+            <div><span className="text-muted-foreground">Acheteur :</span> <span className="font-bold capitalize">{formatOrderRef(order.nom_commande, order.id)}</span></div>
             <div><span className="text-muted-foreground">Montant :</span> <span className="font-bold text-primary">{order.montant_total.toFixed(2)} €</span></div>
             <div className="flex items-center gap-1.5">
               <span className="text-muted-foreground">Statut :</span>

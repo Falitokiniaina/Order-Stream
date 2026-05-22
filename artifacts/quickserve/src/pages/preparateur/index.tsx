@@ -1,4 +1,5 @@
 import { useRoute } from "wouter";
+import { formatOrderRef } from "@/lib/utils";
 import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
@@ -173,7 +174,7 @@ function PreparateurContent({ slug }: { slug: string }) {
                 {toPrepare.map(order => (
                   <div key={order.id} className="bg-card border-2 border-secondary/20 rounded-2xl overflow-hidden shadow-sm flex flex-col">
                     <div className="bg-secondary/10 p-4 border-b border-secondary/20 flex justify-between items-center">
-                      <div className="text-xl font-black text-foreground">{order.nom_commande}</div>
+                      <div className="text-xl font-black text-foreground capitalize">{formatOrderRef(order.nom_commande, order.id)}</div>
                       <div className="text-xs font-bold text-secondary uppercase bg-secondary/20 px-2 py-1 rounded-full">
                         {order.statut === 'livree_partiellement' ? 'Partiel' : 'Nouveau'}
                       </div>
@@ -224,7 +225,7 @@ function PreparateurContent({ slug }: { slug: string }) {
               {history.map(order => (
                 <div key={order.id} className="p-4 border-b last:border-0 flex justify-between items-center hover:bg-muted/50">
                   <div>
-                    <div className="font-bold text-lg">{order.nom_commande}</div>
+                    <div className="font-bold text-lg capitalize">{formatOrderRef(order.nom_commande, order.id)}</div>
                     <div className="text-sm text-muted-foreground">
                       {order.items?.map(i => `${i.quantite}x ${i.article_nom}`).join(", ")}
                     </div>
@@ -248,7 +249,7 @@ function PreparateurContent({ slug }: { slug: string }) {
       <Dialog open={!!selectedOrderForPartial} onOpenChange={(open) => !open && setSelectedOrderForPartial(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Livraison Partielle : {currentOrder?.nom_commande}</DialogTitle>
+            <DialogTitle>Livraison Partielle : {currentOrder ? formatOrderRef(currentOrder.nom_commande, currentOrder.id) : ""}</DialogTitle>
           </DialogHeader>
           
           <div className="py-4 space-y-4">

@@ -1,4 +1,5 @@
 import { useRoute } from "wouter";
+import { formatOrderRef } from "@/lib/utils";
 import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, usePayOrder, useReactivateOrder } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
@@ -168,7 +169,7 @@ function CaisseContent({ slug }: { slug: string }) {
                         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
                           {new Date(order.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </div>
-                        <div className="text-xl font-black leading-none capitalize">{order.nom_commande}</div>
+                        <div className="text-xl font-black leading-none capitalize">{formatOrderRef(order.nom_commande, order.id)}</div>
                       </div>
                       <div className="text-xl font-bold text-primary">{order.montant_total.toFixed(2)} €</div>
                     </div>
@@ -211,7 +212,7 @@ function CaisseContent({ slug }: { slug: string }) {
                   <tbody className="divide-y">
                     {historique.map(order => (
                       <tr key={order.id} className="hover:bg-muted/20">
-                        <td className="px-4 py-3 font-bold capitalize">{order.nom_commande}</td>
+                        <td className="px-4 py-3 font-bold capitalize">{formatOrderRef(order.nom_commande, order.id)}</td>
                         <td className="px-4 py-3 text-muted-foreground text-xs">
                           {order.items?.map(i => `${i.quantite}x ${i.article_nom}`).join(", ")}
                         </td>
@@ -248,7 +249,7 @@ function CaisseContent({ slug }: { slug: string }) {
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-black text-lg capitalize">{order.nom_commande}</span>
+                            <span className="font-black text-lg capitalize">{formatOrderRef(order.nom_commande, order.id)}</span>
                             <span className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -314,7 +315,7 @@ function CaisseContent({ slug }: { slug: string }) {
       <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Encaisser : <span className="capitalize">{currentOrder?.nom_commande}</span></DialogTitle>
+            <DialogTitle>Encaisser : <span className="capitalize">{currentOrder ? formatOrderRef(currentOrder.nom_commande, currentOrder.id) : ""}</span></DialogTitle>
             <DialogDescription>Total à payer : {currentOrder?.montant_total.toFixed(2)} €</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

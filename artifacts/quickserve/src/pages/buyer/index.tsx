@@ -8,6 +8,7 @@ import {
   getOrderByName, Order
 } from "@workspace/api-client-react";
 import { collectDeviceInfo } from "@/lib/collect-device-info";
+import { formatOrderRef } from "@/lib/utils";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useState, useEffect, useRef } from "react";
 import { useInView } from "@/hooks/use-in-view";
@@ -349,7 +350,7 @@ export default function BuyerPage() {
             {existingOrderConflict?.statut === "en_attente" ? (
               <>
                 <DialogDescription>
-                  Une commande <strong>"{existingOrderConflict.nom_commande}"</strong> est déjà en cours de construction.
+                  Une commande <strong>"{formatOrderRef(existingOrderConflict.nom_commande, existingOrderConflict.id)}"</strong> est déjà en cours de construction.
                 </DialogDescription>
                 <p className="text-sm text-muted-foreground">
                   {settings?.allow_reprendre_commande
@@ -389,7 +390,7 @@ export default function BuyerPage() {
             ) : existingOrderConflict?.statut === "reservee" ? (
               <>
                 <DialogDescription>
-                  La commande <strong>"{existingOrderConflict.nom_commande}"</strong> est déjà réservée et en attente à la caisse.
+                  La commande <strong>"{formatOrderRef(existingOrderConflict.nom_commande, existingOrderConflict.id)}"</strong> est déjà réservée et en attente à la caisse.
                 </DialogDescription>
                 <p className="text-sm text-muted-foreground">Voulez-vous annuler la réservation en cours et modifier votre commande ?</p>
                 <div className="bg-muted rounded-lg p-3 text-sm space-y-1">
@@ -413,7 +414,7 @@ export default function BuyerPage() {
             ) : (
               <>
                 <DialogDescription>
-                  Le nom <strong>"{existingOrderConflict?.nom_commande}"</strong> est déjà enregistré
+                  La commande <strong>"{existingOrderConflict ? formatOrderRef(existingOrderConflict.nom_commande, existingOrderConflict.id) : ""}"</strong> est déjà enregistrée
                   {existingOrderConflict?.statut === "expiree" && " (commande expirée)"}
                   {existingOrderConflict?.statut === "payee" && " (commande payée)"}
                   {existingOrderConflict?.statut === "livree" && " (commande livrée)"}
