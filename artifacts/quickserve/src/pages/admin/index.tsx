@@ -1,5 +1,5 @@
 import { PasswordGate } from "@/components/password-gate";
-import { formatOrderRef } from "@/lib/utils";
+import { formatOrderRef, matchesOrderSearch } from "@/lib/utils";
 import { LoginInputRole } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import {
@@ -616,7 +616,7 @@ function CommandesTab({ eventId }: { eventId: number }) {
   const filtered = useMemo(() => {
     if (!orders) return [];
     return orders.filter(o => {
-      const matchSearch = !search || o.nom_commande.toLowerCase().includes(search.toLowerCase());
+      const matchSearch = matchesOrderSearch(o, search);
       const matchStatut = filterStatut === "tous" || o.statut === filterStatut;
       return matchSearch && matchStatut;
     }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

@@ -456,7 +456,7 @@ export default function BuyerPage() {
         <div className="w-full max-w-md space-y-4">
           <div className="text-center mb-2">
             <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Commande de</p>
-            <h1 className="text-5xl font-black text-primary uppercase tracking-tight">{orderName}</h1>
+            <h1 className="text-5xl font-black text-primary uppercase tracking-tight">{liveOrder?.id ? formatOrderRef(orderName, liveOrder.id) : orderName}</h1>
           </div>
 
           {isExpired && (
@@ -557,7 +557,7 @@ export default function BuyerPage() {
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
                 <ArrowRight size={24} className="mx-auto text-amber-600 mb-2" />
                 <p className="font-black text-amber-900 text-lg">RENDEZ-VOUS À LA CAISSE</p>
-                <p className="text-sm text-amber-700 mt-1">Donnez votre nom <strong>{orderName}</strong> au caissier</p>
+                <p className="text-sm text-amber-700 mt-1">Donnez votre référence <strong>{liveOrder?.id ? formatOrderRef(orderName, liveOrder.id) : orderName}</strong> au caissier</p>
               </div>
             </div>
           )}
@@ -576,7 +576,7 @@ export default function BuyerPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
                 <ChefHat size={24} className="mx-auto text-blue-600 mb-2" />
                 <p className="font-black text-blue-900 text-lg">RENDEZ-VOUS AU PRÉPARATEUR</p>
-                <p className="text-sm text-blue-700 mt-1">Votre commande <strong>{orderName}</strong> est en cours de préparation</p>
+                <p className="text-sm text-blue-700 mt-1">Votre commande <strong>{liveOrder?.id ? formatOrderRef(orderName, liveOrder.id) : orderName}</strong> est en cours de préparation</p>
               </div>
             </div>
           )}
@@ -635,7 +635,7 @@ export default function BuyerPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Commande de</p>
-              <h1 className="text-2xl font-black text-primary leading-tight">{orderName}</h1>
+              <h1 className="text-2xl font-black text-primary leading-tight">{editingOrderId ? formatOrderRef(orderName, editingOrderId) : orderName}</h1>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setStep("name")}>Modifier le nom</Button>
           </div>

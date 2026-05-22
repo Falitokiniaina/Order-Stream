@@ -1,5 +1,5 @@
 import { useRoute } from "wouter";
-import { formatOrderRef } from "@/lib/utils";
+import { formatOrderRef, matchesOrderSearch } from "@/lib/utils";
 import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, usePayOrder, useReactivateOrder } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
@@ -42,21 +42,21 @@ function CaisseContent({ slug }: { slug: string }) {
   const reservedOrders = useMemo(() => {
     if (!orders) return [];
     let filtered = orders.filter(o => o.statut === "reservee");
-    if (search) filtered = filtered.filter(o => o.nom_commande.toLowerCase().includes(search.toLowerCase()));
+    if (search) filtered = filtered.filter(o => matchesOrderSearch(o, search));
     return filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   }, [orders, search]);
 
   const historique = useMemo(() => {
     if (!orders) return [];
     let filtered = orders.filter(o => ["payee", "livree_partiellement", "livree"].includes(o.statut));
-    if (search) filtered = filtered.filter(o => o.nom_commande.toLowerCase().includes(search.toLowerCase()));
+    if (search) filtered = filtered.filter(o => matchesOrderSearch(o, search));
     return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [orders, search]);
 
   const expiredOrders = useMemo(() => {
     if (!orders) return [];
     let filtered = orders.filter(o => o.statut === "expiree");
-    if (search) filtered = filtered.filter(o => o.nom_commande.toLowerCase().includes(search.toLowerCase()));
+    if (search) filtered = filtered.filter(o => matchesOrderSearch(o, search));
     return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [orders, search]);
 

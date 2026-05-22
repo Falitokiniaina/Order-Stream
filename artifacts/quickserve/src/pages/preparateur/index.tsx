@@ -1,5 +1,5 @@
 import { useRoute } from "wouter";
-import { formatOrderRef } from "@/lib/utils";
+import { formatOrderRef, matchesOrderSearch } from "@/lib/utils";
 import { useGetEventBySlug, getGetEventBySlugQueryKey, useListOrders, getListOrdersQueryKey, useDeliverOrderPartial, useGetOrdersSummary, getGetOrdersSummaryQueryKey } from "@workspace/api-client-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { PasswordGate } from "@/components/password-gate";
@@ -53,7 +53,7 @@ function PreparateurContent({ slug }: { slug: string }) {
   const toPrepare = useMemo(() => {
     let list = allToPrepare;
     if (searchToPrepare) {
-      list = list.filter(o => o.nom_commande.toLowerCase().includes(searchToPrepare.toLowerCase()));
+      list = list.filter(o => matchesOrderSearch(o, searchToPrepare));
     }
     return list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   }, [allToPrepare, searchToPrepare]);
@@ -75,7 +75,7 @@ function PreparateurContent({ slug }: { slug: string }) {
     if (!orders) return [];
     let h = orders.filter(o => o.statut === 'livree');
     if (searchHistory) {
-      h = h.filter(o => o.nom_commande.toLowerCase().includes(searchHistory.toLowerCase()));
+      h = h.filter(o => matchesOrderSearch(o, searchHistory));
     }
     return h.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()).slice(0, 50);
   }, [orders, searchHistory]);
