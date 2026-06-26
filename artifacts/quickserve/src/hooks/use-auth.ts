@@ -13,7 +13,7 @@ export function useAuth(requiredRole?: string, requiredSlug?: string) {
         const data = JSON.parse(session);
         if (requiredRole && data.role !== requiredRole) {
           setIsAuthenticated(false);
-        } else if (requiredSlug && data.eventSlug !== requiredSlug && data.role !== "admin") {
+        } else if (requiredSlug && data.eventSlug !== requiredSlug) {
           setIsAuthenticated(false);
         } else {
           setIsAuthenticated(true);

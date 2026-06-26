@@ -38,13 +38,13 @@ router.post("/auth/login", async (req, res) => {
 
     if (role === "admin") {
       if (eventSlug) {
+        // Slug-scoped admin: only validate against that specific event's mdp_admin
         const event = await db.select().from(evenementsTable).where(eq(evenementsTable.slug_url, eventSlug)).limit(1);
-        if (event.length > 0) {
-          const params = await db.select().from(parametrageTable).where(eq(parametrageTable.evenement_id, event[0].id)).limit(1);
-          if (params.length > 0 && params[0].mdp_admin === password) valid = true;
-        }
-      }
-      if (!valid) {
+        if (event.length === 0) return res.status(404).json({ error: "Event not found" });
+        const params = await db.select().from(parametrageTable).where(eq(parametrageTable.evenement_id, event[0].id)).limit(1);
+        if (params.length > 0 && params[0].mdp_admin === password) valid = true;
+      } else {
+        // Global admin (/admin): accept any event's admin password
         const allParams = await db.select().from(parametrageTable);
         valid = allParams.some(p => p.mdp_admin === password);
       }
