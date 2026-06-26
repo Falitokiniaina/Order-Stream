@@ -182,7 +182,7 @@ function AdminContent() {
   );
 }
 
-function DashboardTab({ eventId }: { eventId: number }) {
+export function DashboardTab({ eventId }: { eventId: number }) {
   const { data: stats, refetch, isFetching } = useGetDashboard(eventId, { query: { enabled: !!eventId, queryKey: getGetDashboardQueryKey(eventId), refetchInterval: 30000 } });
 
   if (!stats) return <div>Chargement des statistiques...</div>;
@@ -313,7 +313,7 @@ function DashboardTab({ eventId }: { eventId: number }) {
   );
 }
 
-function StockTab({ eventId }: { eventId: number }) {
+export function StockTab({ eventId }: { eventId: number }) {
   const { data: articles } = useListArticles(eventId, { query: { enabled: !!eventId, queryKey: getListArticlesQueryKey(eventId) } });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
@@ -605,7 +605,7 @@ function StockTab({ eventId }: { eventId: number }) {
   );
 }
 
-function CommandesTab({ eventId }: { eventId: number }) {
+export function CommandesTab({ eventId }: { eventId: number }) {
   const { data: orders } = useListOrders(eventId, {
     query: { enabled: !!eventId, queryKey: getListOrdersQueryKey(eventId), refetchInterval: 15000 }
   });
@@ -734,7 +734,7 @@ function CommandesTab({ eventId }: { eventId: number }) {
   );
 }
 
-function ConfigTab({ eventId }: { eventId: number }) {
+export function ConfigTab({ eventId }: { eventId: number }) {
   const { data: settings } = useGetSettings(eventId, { query: { enabled: !!eventId, queryKey: getGetSettingsQueryKey(eventId) } });
   const updateSettings = useUpdateSettings();
   const queryClient = useQueryClient();
@@ -832,7 +832,7 @@ function ConfigTab({ eventId }: { eventId: number }) {
 }
 
 // ── SnapshotsTab ─────────────────────────────────────────────────────────────
-function SnapshotsTab({ eventId }: { eventId: number }) {
+export function SnapshotsTab({ eventId }: { eventId: number }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: snapshots, isLoading } = useListSnapshots(eventId, {

@@ -8,6 +8,7 @@ import BuyerPage from "@/pages/buyer";
 import CaissePage from "@/pages/caisse";
 import PreparateurPage from "@/pages/preparateur";
 import AdminPage from "@/pages/admin";
+import SlugAdminPage from "@/pages/slug-admin";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/:slug/caisse" component={CaissePage} />
       <Route path="/:slug/preparateur" component={PreparateurPage} />
+      <Route path="/:slug/admin" component={SlugAdminPage} />
       <Route path="/:slug" component={BuyerPage} />
       <Route component={NotFound} />
     </Switch>
