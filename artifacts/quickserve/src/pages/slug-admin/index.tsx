@@ -1,11 +1,12 @@
 import { useRoute, Link } from "wouter";
 import { PasswordGate } from "@/components/password-gate";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { LoginInputRole, useGetEventBySlug, getGetEventBySlugQueryKey } from "@workspace/api-client-react";
+import { LoginInputRole, useGetEventBySlug, getGetEventBySlugQueryKey, type Event } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Settings, BarChart3, PackageIcon, List, Archive, LogOut, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Settings, BarChart3, List, Archive, LogOut, ArrowLeft, AlertTriangle } from "lucide-react";
+import { Package as PackageIcon } from "lucide-react";
 import { DashboardTab, CommandesTab, StockTab, ConfigTab, SnapshotsTab } from "@/pages/admin";
 
 export default function SlugAdminPage() {
@@ -13,15 +14,6 @@ export default function SlugAdminPage() {
   const slug = params?.slug ?? "";
   usePageTitle(`Admin · ${slug} · QuickServe`);
 
-  return (
-    <PasswordGate role={LoginInputRole.admin} eventSlug={slug}>
-      <SlugAdminContent slug={slug} />
-    </PasswordGate>
-  );
-}
-
-function SlugAdminContent({ slug }: { slug: string }) {
-  const { logout } = useAuth();
   const { data: event, isLoading, isError } = useGetEventBySlug(slug, {
     query: { enabled: !!slug, queryKey: getGetEventBySlugQueryKey(slug) }
   });
@@ -29,7 +21,7 @@ function SlugAdminContent({ slug }: { slug: string }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Chargement de l'événement…</p>
+        <p className="text-muted-foreground text-sm animate-pulse">Chargement…</p>
       </div>
     );
   }
@@ -52,6 +44,16 @@ function SlugAdminContent({ slug }: { slug: string }) {
       </div>
     );
   }
+
+  return (
+    <PasswordGate role={LoginInputRole.admin} eventSlug={slug}>
+      <SlugAdminContent slug={slug} event={event} />
+    </PasswordGate>
+  );
+}
+
+function SlugAdminContent({ slug, event }: { slug: string; event: Event }) {
+  const { logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
