@@ -725,6 +725,7 @@ export const UpdateSettingsBody = zod.object({
   "mdp_caisse": zod.string().optional(),
   "mdp_preparateur": zod.string().optional(),
   "mdp_admin": zod.string().optional(),
+  "mdp_admin_local": zod.string().optional(),
   "vente_ouverte": zod.boolean().optional(),
   "allow_reprendre_commande": zod.boolean().optional()
 })

@@ -1025,6 +1025,8 @@ components:
           type: string
         mdp_admin:
           type: string
+        mdp_admin_local:
+          type: string
         vente_ouverte:
           type: boolean
         allow_reprendre_commande:

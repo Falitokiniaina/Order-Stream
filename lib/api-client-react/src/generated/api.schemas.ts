@@ -181,6 +181,7 @@ export interface SettingsUpdate {
   mdp_caisse?: string;
   mdp_preparateur?: string;
   mdp_admin?: string;
+  mdp_admin_local?: string;
   vente_ouverte?: boolean;
   allow_reprendre_commande?: boolean;
 }

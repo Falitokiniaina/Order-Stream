@@ -10,6 +10,7 @@ export const parametrageTable = pgTable("parametrage", {
   mdp_caisse: text("mdp_caisse").notNull().default("caisse123"),
   mdp_preparateur: text("mdp_preparateur").notNull().default("prep123"),
   mdp_admin: text("mdp_admin").notNull().default("admin123"),
+  mdp_admin_local: text("mdp_admin_local").notNull().default("admin123"),
   vente_ouverte: boolean("vente_ouverte").notNull().default(true),
   allow_reprendre_commande: boolean("allow_reprendre_commande").notNull().default(false),
   updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

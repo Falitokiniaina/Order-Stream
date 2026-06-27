@@ -746,7 +746,8 @@ export function ConfigTab({ eventId }: { eventId: number }) {
     allow_reprendre_commande: settings?.allow_reprendre_commande ?? false,
     mdp_caisse: "",
     mdp_preparateur: "",
-    mdp_admin: ""
+    mdp_admin: "",
+    mdp_admin_local: ""
   });
 
   useMemo(() => {
@@ -765,10 +766,11 @@ export function ConfigTab({ eventId }: { eventId: number }) {
       if (form.mdp_caisse) dataToUpdate.mdp_caisse = form.mdp_caisse;
       if (form.mdp_preparateur) dataToUpdate.mdp_preparateur = form.mdp_preparateur;
       if (form.mdp_admin) dataToUpdate.mdp_admin = form.mdp_admin;
+      if (form.mdp_admin_local) dataToUpdate.mdp_admin_local = form.mdp_admin_local;
 
       await updateSettings.mutateAsync({ eventId, data: dataToUpdate });
       queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey(eventId) });
-      setForm(f => ({ ...f, mdp_caisse: "", mdp_preparateur: "", mdp_admin: "" }));
+      setForm(f => ({ ...f, mdp_caisse: "", mdp_preparateur: "", mdp_admin: "", mdp_admin_local: "" }));
       toast({ title: "Configuration sauvegardée" });
     } catch (e) {
       toast({ title: "Erreur lors de la sauvegarde", variant: "destructive" });
@@ -817,8 +819,12 @@ export function ConfigTab({ eventId }: { eventId: number }) {
               <Input type="password" placeholder="***" value={form.mdp_preparateur} onChange={e => setForm({ ...form, mdp_preparateur: e.target.value })} />
             </div>
             <div className="grid gap-2">
-              <Label>Mot de passe Admin (Général)</Label>
+              <Label>Mot de passe Admin (Général — page <code className="text-xs bg-muted px-1 rounded">/admin</code>)</Label>
               <Input type="password" placeholder="***" value={form.mdp_admin} onChange={e => setForm({ ...form, mdp_admin: e.target.value })} />
+            </div>
+            <div className="grid gap-2">
+              <Label>Mot de passe Admin Local (page <code className="text-xs bg-muted px-1 rounded">/:slug/admin</code>)</Label>
+              <Input type="password" placeholder="***" value={form.mdp_admin_local} onChange={e => setForm({ ...form, mdp_admin_local: e.target.value })} />
             </div>
           </div>
         </div>
