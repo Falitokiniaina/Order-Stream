@@ -716,6 +716,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/Settings"
 
+  /system/settings:
+    get:
+      operationId: getSystemSettings
+      tags: [settings]
+      summary: Get global system settings
+      responses:
+        "200":
+          description: System settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSettings"
+    patch:
+      operationId: updateSystemSettings
+      tags: [settings]
+      summary: Update global system settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SystemSettingsUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSettings"
+
   /events/{eventId}/dashboard:
     get:
       operationId: getDashboard
@@ -1023,14 +1053,27 @@ components:
           type: string
         mdp_preparateur:
           type: string
-        mdp_admin:
-          type: string
         mdp_admin_local:
           type: string
         vente_ouverte:
           type: boolean
         allow_reprendre_commande:
           type: boolean
+
+    SystemSettings:
+      type: object
+      required: [mdp_admin, updated_at]
+      properties:
+        mdp_admin:
+          type: string
+        updated_at:
+          type: string
+
+    SystemSettingsUpdate:
+      type: object
+      properties:
+        mdp_admin:
+          type: string
 
     TopArticle:
       type: object

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { db, parametrageTable, evenementsTable, sessionsTable } from "@workspace/db";
 import { eq, lt } from "drizzle-orm";
+import { getOrInitSystemSettings } from "./system-settings";
 
 const router = Router();
 
@@ -44,9 +45,9 @@ router.post("/auth/login", async (req, res) => {
         const params = await db.select().from(parametrageTable).where(eq(parametrageTable.evenement_id, event[0].id)).limit(1);
         if (params.length > 0 && params[0].mdp_admin_local === password) valid = true;
       } else {
-        // Global admin (/admin): accept any event's mdp_admin password
-        const allParams = await db.select().from(parametrageTable);
-        valid = allParams.some(p => p.mdp_admin === password);
+        // Global admin (/admin): validate against system-level mdp_admin
+        const sys = await getOrInitSystemSettings();
+        if (sys.mdp_admin === password) valid = true;
       }
     } else if (role === "caisse" || role === "preparateur") {
       if (!eventSlug) return res.status(400).json({ error: "eventSlug required for this role" });
@@ -76,7 +77,6 @@ router.post("/auth/login", async (req, res) => {
       expires_at: expiresAt,
     });
 
-    // Purge expired sessions in background (fire-and-forget)
     purgeExpiredSessions().catch(() => {});
 
     res.json({ success: true, role, eventSlug: eventSlug ?? null, token });

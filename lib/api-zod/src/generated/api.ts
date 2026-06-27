@@ -724,7 +724,6 @@ export const UpdateSettingsBody = zod.object({
   "temps_reservation_minutes": zod.number().optional(),
   "mdp_caisse": zod.string().optional(),
   "mdp_preparateur": zod.string().optional(),
-  "mdp_admin": zod.string().optional(),
   "mdp_admin_local": zod.string().optional(),
   "vente_ouverte": zod.boolean().optional(),
   "allow_reprendre_commande": zod.boolean().optional()
@@ -736,6 +735,28 @@ export const UpdateSettingsResponse = zod.object({
   "temps_reservation_minutes": zod.number(),
   "vente_ouverte": zod.boolean(),
   "allow_reprendre_commande": zod.boolean(),
+  "updated_at": zod.string()
+})
+
+
+/**
+ * @summary Get global system settings
+ */
+export const GetSystemSettingsResponse = zod.object({
+  "mdp_admin": zod.string(),
+  "updated_at": zod.string()
+})
+
+
+/**
+ * @summary Update global system settings
+ */
+export const UpdateSystemSettingsBody = zod.object({
+  "mdp_admin": zod.string().optional()
+})
+
+export const UpdateSystemSettingsResponse = zod.object({
+  "mdp_admin": zod.string(),
   "updated_at": zod.string()
 })
 

@@ -149,15 +149,17 @@ router.post("/events/:eventId/snapshots/:snapId/restore", async (req, res) => {
         );
       }
 
-      // 3. Restore parametrage
+      // 3. Restore parametrage (mdp_admin is now global in system_settings, not per-event)
       if (data.parametrage) {
-        const p = data.parametrage;
+        const p = data.parametrage as Record<string, unknown>;
         await client.query(
           `UPDATE parametrage SET
              temps_reservation_minutes=$1, mdp_caisse=$2, mdp_preparateur=$3,
-             mdp_admin=$4, vente_ouverte=$5, allow_reprendre_commande=$6
+             mdp_admin_local=$4, vente_ouverte=$5, allow_reprendre_commande=$6
            WHERE evenement_id=$7`,
-          [p.temps_reservation_minutes, p.mdp_caisse, p.mdp_preparateur, p.mdp_admin, p.vente_ouverte, p.allow_reprendre_commande, eventId]
+          [p["temps_reservation_minutes"], p["mdp_caisse"], p["mdp_preparateur"],
+           p["mdp_admin_local"] ?? p["mdp_admin"] ?? "admin123",
+           p["vente_ouverte"], p["allow_reprendre_commande"], eventId]
         );
       }
 

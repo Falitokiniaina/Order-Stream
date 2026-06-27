@@ -30,11 +30,10 @@ router.patch("/events/:eventId/settings", async (req, res) => {
   const eventId = parseInt(req.params.eventId);
   if (isNaN(eventId)) return res.status(400).json({ error: "Invalid eventId" });
 
-  const { temps_reservation_minutes, mdp_caisse, mdp_preparateur, mdp_admin, mdp_admin_local, vente_ouverte, allow_reprendre_commande } = req.body as {
+  const { temps_reservation_minutes, mdp_caisse, mdp_preparateur, mdp_admin_local, vente_ouverte, allow_reprendre_commande } = req.body as {
     temps_reservation_minutes?: number;
     mdp_caisse?: string;
     mdp_preparateur?: string;
-    mdp_admin?: string;
     mdp_admin_local?: string;
     vente_ouverte?: boolean;
     allow_reprendre_commande?: boolean;
@@ -45,7 +44,6 @@ router.patch("/events/:eventId/settings", async (req, res) => {
     if (temps_reservation_minutes !== undefined) updates.temps_reservation_minutes = temps_reservation_minutes;
     if (mdp_caisse !== undefined) updates.mdp_caisse = mdp_caisse;
     if (mdp_preparateur !== undefined) updates.mdp_preparateur = mdp_preparateur;
-    if (mdp_admin !== undefined) updates.mdp_admin = mdp_admin;
     if (mdp_admin_local !== undefined) updates.mdp_admin_local = mdp_admin_local;
     if (vente_ouverte !== undefined) updates.vente_ouverte = vente_ouverte;
     if (allow_reprendre_commande !== undefined) updates.allow_reprendre_commande = allow_reprendre_commande;

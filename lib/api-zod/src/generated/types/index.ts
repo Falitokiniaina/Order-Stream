@@ -34,4 +34,6 @@ export * from './sessionInfo';
 export * from './settings';
 export * from './settingsUpdate';
 export * from './snapshot';
+export * from './systemSettings';
+export * from './systemSettingsUpdate';
 export * from './topArticle';

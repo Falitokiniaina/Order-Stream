@@ -180,10 +180,18 @@ export interface SettingsUpdate {
   temps_reservation_minutes?: number;
   mdp_caisse?: string;
   mdp_preparateur?: string;
-  mdp_admin?: string;
   mdp_admin_local?: string;
   vente_ouverte?: boolean;
   allow_reprendre_commande?: boolean;
+}
+
+export interface SystemSettings {
+  mdp_admin: string;
+  updated_at: string;
+}
+
+export interface SystemSettingsUpdate {
+  mdp_admin?: string;
 }
 
 export interface TopArticle {

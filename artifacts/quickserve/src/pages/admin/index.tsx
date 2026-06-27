@@ -7,6 +7,7 @@ import {
   useCreateEvent, useUpdateEvent,
   useGetDashboard, getGetDashboardQueryKey,
   useGetSettings, getGetSettingsQueryKey, useUpdateSettings,
+  useGetSystemSettings, getGetSystemSettingsQueryKey, useUpdateSystemSettings,
   useListArticles, getListArticlesQueryKey,
   useCreateArticle, useUpdateArticle, useDeleteArticle, useReorderArticles,
   useListOrders, getListOrdersQueryKey,
@@ -736,7 +737,9 @@ export function CommandesTab({ eventId }: { eventId: number }) {
 
 export function ConfigTab({ eventId, hideGlobalAdminPassword }: { eventId: number; hideGlobalAdminPassword?: boolean }) {
   const { data: settings } = useGetSettings(eventId, { query: { enabled: !!eventId, queryKey: getGetSettingsQueryKey(eventId) } });
+  const { data: systemSettings } = useGetSystemSettings({ query: { enabled: !hideGlobalAdminPassword, queryKey: getGetSystemSettingsQueryKey() } });
   const updateSettings = useUpdateSettings();
+  const updateSystemSettings = useUpdateSystemSettings();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -746,8 +749,8 @@ export function ConfigTab({ eventId, hideGlobalAdminPassword }: { eventId: numbe
     allow_reprendre_commande: settings?.allow_reprendre_commande ?? false,
     mdp_caisse: "",
     mdp_preparateur: "",
-    mdp_admin: "",
-    mdp_admin_local: ""
+    mdp_admin_local: "",
+    mdp_admin_global: ""
   });
 
   useMemo(() => {
@@ -765,12 +768,17 @@ export function ConfigTab({ eventId, hideGlobalAdminPassword }: { eventId: numbe
       };
       if (form.mdp_caisse) dataToUpdate.mdp_caisse = form.mdp_caisse;
       if (form.mdp_preparateur) dataToUpdate.mdp_preparateur = form.mdp_preparateur;
-      if (form.mdp_admin) dataToUpdate.mdp_admin = form.mdp_admin;
       if (form.mdp_admin_local) dataToUpdate.mdp_admin_local = form.mdp_admin_local;
 
       await updateSettings.mutateAsync({ eventId, data: dataToUpdate });
+
+      if (!hideGlobalAdminPassword && form.mdp_admin_global) {
+        await updateSystemSettings.mutateAsync({ data: { mdp_admin: form.mdp_admin_global } });
+        queryClient.invalidateQueries({ queryKey: getGetSystemSettingsQueryKey() });
+      }
+
       queryClient.invalidateQueries({ queryKey: getGetSettingsQueryKey(eventId) });
-      setForm(f => ({ ...f, mdp_caisse: "", mdp_preparateur: "", mdp_admin: "", mdp_admin_local: "" }));
+      setForm(f => ({ ...f, mdp_caisse: "", mdp_preparateur: "", mdp_admin_local: "", mdp_admin_global: "" }));
       toast({ title: "Configuration sauvegardée" });
     } catch (e) {
       toast({ title: "Erreur lors de la sauvegarde", variant: "destructive" });
@@ -820,8 +828,9 @@ export function ConfigTab({ eventId, hideGlobalAdminPassword }: { eventId: numbe
             </div>
             {!hideGlobalAdminPassword && (
               <div className="grid gap-2">
-                <Label>Mot de passe Admin (Général — page <code className="text-xs bg-muted px-1 rounded">/admin</code>)</Label>
-                <Input type="password" placeholder="***" value={form.mdp_admin} onChange={e => setForm({ ...form, mdp_admin: e.target.value })} />
+                <Label>Mot de passe Admin Global (page <code className="text-xs bg-muted px-1 rounded">/admin</code>)</Label>
+                <p className="text-xs text-muted-foreground">Mot de passe actuel : {systemSettings ? "••••••" : "chargement…"}</p>
+                <Input type="password" placeholder="Nouveau mot de passe…" value={form.mdp_admin_global} onChange={e => setForm({ ...form, mdp_admin_global: e.target.value })} />
               </div>
             )}
             <div className="grid gap-2">
