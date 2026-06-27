@@ -734,7 +734,7 @@ export function CommandesTab({ eventId }: { eventId: number }) {
   );
 }
 
-export function ConfigTab({ eventId }: { eventId: number }) {
+export function ConfigTab({ eventId, hideGlobalAdminPassword }: { eventId: number; hideGlobalAdminPassword?: boolean }) {
   const { data: settings } = useGetSettings(eventId, { query: { enabled: !!eventId, queryKey: getGetSettingsQueryKey(eventId) } });
   const updateSettings = useUpdateSettings();
   const queryClient = useQueryClient();
@@ -818,10 +818,12 @@ export function ConfigTab({ eventId }: { eventId: number }) {
               <Label>Mot de passe Préparateur</Label>
               <Input type="password" placeholder="***" value={form.mdp_preparateur} onChange={e => setForm({ ...form, mdp_preparateur: e.target.value })} />
             </div>
-            <div className="grid gap-2">
-              <Label>Mot de passe Admin (Général — page <code className="text-xs bg-muted px-1 rounded">/admin</code>)</Label>
-              <Input type="password" placeholder="***" value={form.mdp_admin} onChange={e => setForm({ ...form, mdp_admin: e.target.value })} />
-            </div>
+            {!hideGlobalAdminPassword && (
+              <div className="grid gap-2">
+                <Label>Mot de passe Admin (Général — page <code className="text-xs bg-muted px-1 rounded">/admin</code>)</Label>
+                <Input type="password" placeholder="***" value={form.mdp_admin} onChange={e => setForm({ ...form, mdp_admin: e.target.value })} />
+              </div>
+            )}
             <div className="grid gap-2">
               <Label>Mot de passe Admin Local (page <code className="text-xs bg-muted px-1 rounded">/:slug/admin</code>)</Label>
               <Input type="password" placeholder="***" value={form.mdp_admin_local} onChange={e => setForm({ ...form, mdp_admin_local: e.target.value })} />

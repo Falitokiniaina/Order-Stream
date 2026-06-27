@@ -103,7 +103,7 @@ function SlugAdminContent({ slug, event }: { slug: string; event: Event }) {
           <TabsContent value="dashboard"><DashboardTab eventId={event.id} /></TabsContent>
           <TabsContent value="commandes"><CommandesTab eventId={event.id} /></TabsContent>
           <TabsContent value="stock"><StockTab eventId={event.id} /></TabsContent>
-          <TabsContent value="config"><ConfigTab eventId={event.id} /></TabsContent>
+          <TabsContent value="config"><ConfigTab eventId={event.id} hideGlobalAdminPassword /></TabsContent>
           <TabsContent value="sauvegardes"><SnapshotsTab eventId={event.id} /></TabsContent>
         </Tabs>
       </main>
