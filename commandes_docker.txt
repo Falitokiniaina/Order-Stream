@@ -1,0 +1,12 @@
+git clone https://github.com/Falitokiniaina/Order-Stream
+cd Order-Stream
+# copiez Dockerfile.api, Dockerfile.frontend, nginx.conf, docker-compose.yml, .dockerignore ici
+
+# 1. Schéma de base
+docker compose run --rm migrate
+
+# 2. Données de démonstration
+docker compose run --rm seed
+
+# 3. Lancer l'application
+docker compose up -d

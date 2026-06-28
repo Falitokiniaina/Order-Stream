@@ -1,0 +1,44 @@
+# ─── Stage 1 : build ──────────────────────────────────────────────────────────
+# On utilise node:24 (Debian/glibc) et non alpine car le pnpm-workspace.yaml
+# exclut les binaires natifs musl (rollup, esbuild…) — alpine utilise musl.
+FROM node:24 AS builder
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copy workspace manifests
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY tsconfig.base.json tsconfig.json ./
+
+COPY lib/db/package.json                  lib/db/
+COPY lib/api-spec/package.json            lib/api-spec/
+COPY lib/api-zod/package.json             lib/api-zod/
+COPY lib/api-client-react/package.json    lib/api-client-react/
+COPY scripts/package.json                 scripts/
+COPY artifacts/api-server/package.json    artifacts/api-server/
+COPY artifacts/quickserve/package.json    artifacts/quickserve/
+COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY lib/       lib/
+COPY artifacts/ artifacts/
+# attached_assets/ est optionnel (images statiques)
+RUN mkdir -p attached_assets
+
+# Build the frontend (PORT and BASE_PATH required by vite.config.ts)
+ENV PORT=3000
+ENV BASE_PATH=/
+RUN pnpm --filter @workspace/quickserve run build
+
+# ─── Stage 2 : serve with nginx ───────────────────────────────────────────────
+FROM nginx:alpine AS runtime
+
+COPY --from=builder /app/artifacts/quickserve/dist/public /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 3000
+
+CMD ["nginx", "-g", "daemon off;"]

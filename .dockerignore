@@ -1,0 +1,10 @@
+.git
+.gitignore
+.replit
+.replitignore
+*.md
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+attached_assets

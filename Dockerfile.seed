@@ -1,0 +1,26 @@
+# Image pour exécuter le seed (tsx + toutes les devDependencies)
+FROM node:24
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY tsconfig.base.json tsconfig.json ./
+
+COPY lib/db/package.json                  lib/db/
+COPY lib/api-spec/package.json            lib/api-spec/
+COPY lib/api-zod/package.json             lib/api-zod/
+COPY lib/api-client-react/package.json    lib/api-client-react/
+COPY scripts/package.json                 scripts/
+COPY artifacts/api-server/package.json    artifacts/api-server/
+COPY artifacts/quickserve/package.json    artifacts/quickserve/
+COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY lib/db/      lib/db/
+COPY lib/api-zod/ lib/api-zod/
+COPY scripts/     scripts/
+
+CMD ["pnpm", "--filter", "@workspace/scripts", "run", "seed"]

@@ -1,0 +1,54 @@
+# ─── Stage 1 : build ──────────────────────────────────────────────────────────
+# node:24 (Debian/glibc) — évite les conflits avec les binaires natifs musl
+FROM node:24 AS builder
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY tsconfig.base.json tsconfig.json ./
+
+COPY lib/db/package.json                  lib/db/
+COPY lib/api-spec/package.json            lib/api-spec/
+COPY lib/api-zod/package.json             lib/api-zod/
+COPY lib/api-client-react/package.json    lib/api-client-react/
+COPY scripts/package.json                 scripts/
+COPY artifacts/api-server/package.json    artifacts/api-server/
+COPY artifacts/quickserve/package.json    artifacts/quickserve/
+COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+COPY lib/       lib/
+COPY artifacts/ artifacts/
+
+RUN pnpm --filter @workspace/api-server run build
+
+# ─── Stage 2 : runtime ────────────────────────────────────────────────────────
+FROM node:24-slim AS runtime
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY lib/db/package.json                  lib/db/
+COPY lib/api-spec/package.json            lib/api-spec/
+COPY lib/api-zod/package.json             lib/api-zod/
+COPY lib/api-client-react/package.json    lib/api-client-react/
+COPY scripts/package.json                 scripts/
+COPY artifacts/api-server/package.json    artifacts/api-server/
+COPY artifacts/quickserve/package.json    artifacts/quickserve/
+COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/
+
+RUN pnpm install --frozen-lockfile --ignore-scripts --prod
+
+COPY --from=builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
+
+EXPOSE 8080
+
+ENV PORT=8080
+ENV NODE_ENV=production
+
+CMD ["node", "--enable-source-maps", "./artifacts/api-server/dist/index.mjs"]

@@ -1,0 +1,73 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: orderstream
+      POSTGRES_PASSWORD: orderstream_secret
+      POSTGRES_DB: orderstream
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orderstream"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── API (Express 5) ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    environment:
+      PORT: "8080"
+      NODE_ENV: production
+      DATABASE_URL: postgresql://orderstream:orderstream_secret@db:5432/orderstream
+    depends_on:
+      db:
+        condition: service_healthy
+    # ports:
+    #   - "8080:8080"
+
+  # ── Frontend (React/Vite → nginx) ───────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  # ── Migration DB (one-shot) ─────────────────────────────────────────────────
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    environment:
+      DATABASE_URL: postgresql://orderstream:orderstream_secret@db:5432/orderstream
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Seed — données de démonstration (one-shot) ──────────────────────────────
+  seed:
+    build:
+      context: .
+      dockerfile: Dockerfile.seed
+    environment:
+      DATABASE_URL: postgresql://orderstream:orderstream_secret@db:5432/orderstream
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+volumes:
+  pgdata:
