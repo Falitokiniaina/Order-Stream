@@ -1,0 +1,1 @@
+- [image_url binary storage](image-url-storage.md) — articles.image_url stores data URIs (data:image/...;base64,...), not HTTP links.
