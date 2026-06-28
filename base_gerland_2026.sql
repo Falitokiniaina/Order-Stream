@@ -1,3 +1,5 @@
+-- Pour restaurer cette base :
+-- psql "$DATABASE_URL" < base_gerland_2026.sql
 --
 -- PostgreSQL database dump
 --
