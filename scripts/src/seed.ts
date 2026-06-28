@@ -98,6 +98,7 @@ async function seedDemoEvent() {
         prix: "3.50",
         stock_total: 100,
         display_order: 1,
+        image_url: "https://images.unsplash.com/photo-1608270586620-248524c67de9?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Bière bouteille",
@@ -105,6 +106,7 @@ async function seedDemoEvent() {
         prix: "3.00",
         stock_total: 80,
         display_order: 2,
+        image_url: "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Soft / Soda",
@@ -112,6 +114,7 @@ async function seedDemoEvent() {
         prix: "2.00",
         stock_total: 120,
         display_order: 3,
+        image_url: "https://images.unsplash.com/photo-1554866585-cd94860890b7?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Eau minérale",
@@ -119,6 +122,7 @@ async function seedDemoEvent() {
         prix: "1.50",
         stock_total: 150,
         display_order: 4,
+        image_url: "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Café / Thé",
@@ -126,6 +130,7 @@ async function seedDemoEvent() {
         prix: "1.50",
         stock_total: 60,
         display_order: 5,
+        image_url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Crêpe sucrée",
@@ -133,6 +138,7 @@ async function seedDemoEvent() {
         prix: "2.50",
         stock_total: 50,
         display_order: 6,
+        image_url: "https://images.unsplash.com/photo-1519676867240-f03562e64548?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Hot-dog",
@@ -140,6 +146,7 @@ async function seedDemoEvent() {
         prix: "4.00",
         stock_total: 40,
         display_order: 7,
+        image_url: "https://images.unsplash.com/photo-1615361200141-8640b61c2f37?w=400&q=80&fit=crop&crop=center",
       },
       {
         nom: "Sandwich jambon-beurre",
@@ -147,6 +154,7 @@ async function seedDemoEvent() {
         prix: "3.50",
         stock_total: 30,
         display_order: 8,
+        image_url: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=400&q=80&fit=crop&crop=center",
       },
     ];
 
