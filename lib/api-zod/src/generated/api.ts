@@ -744,6 +744,7 @@ export const UpdateSettingsResponse = zod.object({
  */
 export const GetSystemSettingsResponse = zod.object({
   "mdp_admin": zod.string(),
+  "favicon_svg": zod.string(),
   "updated_at": zod.string()
 })
 
@@ -752,11 +753,13 @@ export const GetSystemSettingsResponse = zod.object({
  * @summary Update global system settings
  */
 export const UpdateSystemSettingsBody = zod.object({
-  "mdp_admin": zod.string().optional()
+  "mdp_admin": zod.string().optional(),
+  "favicon_svg": zod.string().optional()
 })
 
 export const UpdateSystemSettingsResponse = zod.object({
   "mdp_admin": zod.string(),
+  "favicon_svg": zod.string(),
   "updated_at": zod.string()
 })
 

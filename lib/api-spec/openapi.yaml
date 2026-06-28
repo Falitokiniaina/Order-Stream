@@ -1062,9 +1062,11 @@ components:
 
     SystemSettings:
       type: object
-      required: [mdp_admin, updated_at]
+      required: [mdp_admin, favicon_svg, updated_at]
       properties:
         mdp_admin:
+          type: string
+        favicon_svg:
           type: string
         updated_at:
           type: string
@@ -1073,6 +1075,8 @@ components:
       type: object
       properties:
         mdp_admin:
+          type: string
+        favicon_svg:
           type: string
 
     TopArticle:

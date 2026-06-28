@@ -8,5 +8,6 @@
 
 export interface SystemSettings {
   mdp_admin: string;
+  favicon_svg: string;
   updated_at: string;
 }

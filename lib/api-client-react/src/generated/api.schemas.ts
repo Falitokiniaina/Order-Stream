@@ -187,11 +187,13 @@ export interface SettingsUpdate {
 
 export interface SystemSettings {
   mdp_admin: string;
+  favicon_svg: string;
   updated_at: string;
 }
 
 export interface SystemSettingsUpdate {
   mdp_admin?: string;
+  favicon_svg?: string;
 }
 
 export interface TopArticle {

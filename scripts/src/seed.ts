@@ -12,15 +12,21 @@ import {
   articlesTable,
   systemSettingsTable,
 } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+
+const DEFAULT_FAVICON_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF6B35"/><stop offset="100%" stop-color="#C53030"/></linearGradient></defs><rect width="32" height="32" rx="7" fill="url(#g)"/><path d="M20 3 L8 17 H15 L12 29 L24 15 H17 Z" fill="white"/></svg>';
 
 // ── 1. system_settings ───────────────────────────────────────────────────────
 
 async function seedSystemSettings() {
   const existing = await db.select().from(systemSettingsTable).limit(1);
   if (existing.length === 0) {
-    await db.insert(systemSettingsTable).values({ mdp_admin: "admin123" });
-    console.log("✓ system_settings créé (mdp_admin=admin123)");
+    await db.insert(systemSettingsTable).values({
+      mdp_admin: "admin123",
+      favicon_svg: DEFAULT_FAVICON_SVG,
+    });
+    console.log("✓ system_settings créé (mdp_admin=admin123, favicon inclus)");
   } else {
     console.log("· system_settings déjà initialisé");
   }
