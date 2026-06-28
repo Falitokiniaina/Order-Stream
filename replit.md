@@ -10,6 +10,7 @@ Plateforme web de gestion de commandes pour stands de buvette/restauration lors 
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/scripts run seed` — seed demo data (idempotent)
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
